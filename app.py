@@ -23,6 +23,12 @@ def delete_record():
 def token_info():
     pass
 
+def get_image():
+    pass
+
+def put_image():
+    pass
+
 
 
 if __name__ == '__main__':
