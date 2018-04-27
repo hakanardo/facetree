@@ -11,11 +11,12 @@ securityDefinitions:
     authorizationUrl: https://example.com/oauth2/dialog
     x-tokenInfoFunc: app.token_info
     scopes:
-      read: Read access
-      write: Write access
+      read: Read only user
+      user: Normal user
+      admin: Superuser
 
 security:
-  - oauth2: ['read']
+  - oauth2: ['user']
 
 paths:
   /login_password:
@@ -41,6 +42,9 @@ paths:
           required: true
           schema:
             type: object
+            required:
+              - email
+              - password
             properties:
               email:
                 type: string
@@ -86,8 +90,6 @@ paths:
       operationId: app.put_record
       produces:
         - application/json;
-      security:
-        - oauth2: ['write']
       responses:
         200:
           description: The created record with id and version updated
@@ -104,8 +106,6 @@ paths:
       operationId: app.delete_record
       produces:
         - text/plain;
-      security:
-        - oauth2: ['write']
       responses:
         200:
           description: Deleted
@@ -193,8 +193,6 @@ paths:
       operationId: app.put_image
       produces:
         - image/jpeg;
-      security:
-        - oauth2: ['write']
       responses:
         200:
           description: Ok

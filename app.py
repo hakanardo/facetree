@@ -4,7 +4,7 @@ import os
 from base64 import b64encode
 
 users = {'hakan@debian.org': {'password': generate_password_hash('pass')}}
-active_tokens = {}
+active_tokens = {'z8XT5jpnmHgEo66nSctLJzRRpvTuhuOdDmNmp3+BU3I': 'hakan@debian.org'}
 
 def login_password(credentials):
     uid = credentials['email']
@@ -15,8 +15,13 @@ def login_password(credentials):
             return {'token': token}
     return 'Unauthorized', 401
 
-def list_live_records():
-    pass
+def token_info(token):
+    uid = active_tokens.get(token)
+    if uid is not None:
+        return {'uid': users[uid], 'scope': ['user']}
+
+def list_live_records(user):
+    print(user)
 
 def get_latest_record():
     pass
@@ -28,9 +33,6 @@ def put_record():
     pass
 
 def delete_record():
-    pass
-
-def token_info():
     pass
 
 def get_image():
