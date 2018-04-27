@@ -19,7 +19,7 @@ security:
 
 paths:
   /login_password:
-    get:
+    post:
       summary: Login with password
       operationId: app.login_password
       security: [ ]
@@ -30,10 +30,23 @@ paths:
             type: object
             properties:
               token:
+                description: Authetication token to be used in future requests
                 type: string
 
         401:
           description: Login failed
+      parameters:
+        - in: body
+          name: credentials
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+
 
   /record:
     get:

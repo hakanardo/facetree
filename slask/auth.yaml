@@ -1,0 +1,55 @@
+swagger: "2.0"
+
+info:
+  title: OAuth Example
+  version: "1.0"
+
+paths:
+  /secret:
+    get:
+      summary: Return secret string
+      operationId: auth_tst.get_secret
+      responses:
+        200:
+          description: secret response
+          schema:
+            type: string
+      security:
+        # enable authentication and require the "uid" scope for this endpoint
+        - oauth2: ['uid']
+
+  /login/{username}/{passwd}:
+    get:
+      summary: Return secret string
+      operationId: auth_tst.login
+      responses:
+        200:
+          description: login successfull
+          schema:
+            type: string
+        401:
+          description: login failed
+          schema:
+            type: string
+      security: []
+      parameters:
+        - name: username
+          in: path
+          description: Username
+          required: true
+          type: string
+        - name: passwd
+          in: path
+          description: User password
+          required: true
+          type: string
+
+
+securityDefinitions:
+  oauth2:
+    type: oauth2
+    flow: implicit
+    authorizationUrl: https://example.com/oauth2/dialog
+    x-tokenInfoFunc: auth_tst.token_info
+    scopes:
+      uid: Unique identifier of the user accessing the service.

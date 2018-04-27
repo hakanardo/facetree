@@ -1,9 +1,19 @@
-from time import sleep
-
+from werkzeug.security import generate_password_hash, check_password_hash
 import connexion
+import os
+from base64 import b64encode
 
-def login_password():
-    pass
+users = {'hakan': {'password': generate_password_hash('pass')}}
+active_tokens = {}
+
+def login_password(credentials):
+    uid = credentials['username']
+    if uid in users:
+        if check_password_hash(users[uid]['password'], credentials['password']):
+            token = b64encode(os.urandom(32))[:-1].decode('utf-8')
+            active_tokens[token] = 'hakan'
+            return {'token': token}
+    return 'Unauthorized', 401
 
 def list_live_records():
     pass
