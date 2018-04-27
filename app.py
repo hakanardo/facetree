@@ -5,8 +5,24 @@ import connexion
 def login_password():
     pass
 
-def list_live_objects():
+def list_live_records():
     pass
+
+def get_latest_record():
+    pass
+
+def get_record():
+    pass
+
+def put_record():
+    pass
+
+def delete_record():
+    pass
+
+def token_info():
+    pass
+
 
 
 if __name__ == '__main__':

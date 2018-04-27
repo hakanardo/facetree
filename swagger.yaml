@@ -5,19 +5,17 @@ info:
 basePath: /v1
 
 securityDefinitions:
-  password:
+  oauth2:
     type: oauth2
-    # This should be updated to the Token URL of your OAuth provider.
-    tokenUrl: http://example.com/oauth/token
-    flow: password
+    flow: implicit
+    authorizationUrl: https://example.com/oauth2/dialog
+    x-tokenInfoFunc: app.token_info
     scopes:
-      write: allows modifying resources
-      read: allows reading resources
+      read: Read access
+      write: Write access
 
 security:
-  - password:
-    - read
-    - write
+  - oauth2: ['read']
 
 paths:
   /login_password:
@@ -37,20 +35,107 @@ paths:
         401:
           description: Login failed
 
-  /object:
+  /record:
     get:
-      summary: Get latest version of all objects not deleted
-      operationId: app.list_live_objects
+      summary: Get latest version of all records not deleted
+      operationId: app.list_live_records
+      produces:
+        - application/json;
       responses:
         200:
-          description: List of objects
+          description: List of records
           schema:
             type: array
             items:
               - $ref: '#/definitions/Record'
+    put:
+      summary: Create a new (possible the first) version of a record
+      operationId: app.put_record
+      produces:
+        - application/json;
+      security:
+        - oauth2: ['write']
+      responses:
+        200:
+          description: The created record with id and version updated
+          schema:
+            $ref: '#/definitions/Record'
+
+  /record/{id}:
+    get:
+      summary: Get latest version of records with id
+      operationId: app.get_latest_record
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: Record
+          schema:
+            $ref: '#/definitions/Record'
+        404:
+          description: Not found
+      parameters:
+        - name: id
+          in: path
+          description: Id of the record to get.
+          required: true
+          type: string
+    delete:
+      summary: Mark the record with id as deleted
+      operationId: app.delete_record
+      produces:
+        - text/plain;
+      security:
+        - oauth2: ['write']
+      responses:
+        200:
+          description: Deleted
+        404:
+          description: Not found
+      parameters:
+        - name: id
+          in: path
+          description: Id of the record to delete.
+          required: true
+          type: string
+
+
+  /record/{id}/{version}:
+    get:
+      summary: Get specific version of records with id
+      operationId: app.get_record
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: Record
+          schema:
+            $ref: '#/definitions/Record'
+        404:
+          description: Not found
+      parameters:
+        - name: id
+          in: path
+          description: Id of the record to get.
+          required: true
+          type: string
+        - name: version
+          in: path
+          description: Version of the record to get.
+          required: true
+          type: string
+
 
 
 definitions:
+  Event:
+    type: object
+    properties:
+      date:
+        type: string
+      place:
+        type: string
+
   Record:
     type: object
     properties:
@@ -60,7 +145,7 @@ definitions:
         description: A timestamp in ms since the epoch with the creation time of this cersion of the record
         type: string
       type:
-        description: One of Note, Individual or Family
+        description: Either Individual or Family specifying what kind of record it is
         type: string
       author:
         description: The id of the Individual that created this version of the record
@@ -69,20 +154,6 @@ definitions:
       id: "bb8de34a-4a09-11e8-8405-b8ca3a86c404"
       version: "1524826672100"
       type: "Individual"
-
-  Event:
-    allOf:
-      - $ref: "#/definitions/Record"
-      - type: object
-
-  Note:
-    allOf:
-      - $ref: "#/definitions/Record"
-      - type: object
-        properties:
-          text:
-            type: string
-
 
   Individual:
     allOf:
@@ -103,9 +174,7 @@ definitions:
             items:
               - $ref: '#/definitions/Event'
           notes:
-            type: array
-            items:
-              - $ref: '#/definitions/Note'
+            type: string
 
           user_name:
             type: string
