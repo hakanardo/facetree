@@ -42,7 +42,7 @@ paths:
           schema:
             type: object
             properties:
-              username:
+              email:
                 type: string
               password:
                 type: string
@@ -258,8 +258,6 @@ definitions:
           notes:
             type: string
 
-          user_name:
-            type: string
           email:
             type: string
           password:

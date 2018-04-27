@@ -3,15 +3,15 @@ import connexion
 import os
 from base64 import b64encode
 
-users = {'hakan': {'password': generate_password_hash('pass')}}
+users = {'hakan@debian.org': {'password': generate_password_hash('pass')}}
 active_tokens = {}
 
 def login_password(credentials):
-    uid = credentials['username']
+    uid = credentials['email']
     if uid in users:
         if check_password_hash(users[uid]['password'], credentials['password']):
             token = b64encode(os.urandom(32))[:-1].decode('utf-8')
-            active_tokens[token] = 'hakan'
+            active_tokens[token] = uid
             return {'token': token}
     return 'Unauthorized', 401
 
