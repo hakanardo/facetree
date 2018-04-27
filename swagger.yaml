@@ -131,6 +131,33 @@ paths:
           required: true
           type: string
 
+  /updates/{since}:
+    get:
+      summary: Longpoll for getting record updates
+      operationId: app.get_record_updates
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: Record
+          schema:
+            type: object
+            properties:
+              since:
+                type: string
+              records:
+                type: array
+                items:
+                  - $ref: '#/definitions/Record'
+        400:
+          description: Bad since token
+      parameters:
+        - name: since
+          in: path
+          description: Token specifying how old updates to return. Set it to 'NOW' for the first request and then to the since property of previous responses.
+          required: true
+          type: string
+
   /image/{id}:
     get:
       summary: Get specific image with id

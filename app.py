@@ -29,6 +29,9 @@ def get_image():
 def put_image():
     pass
 
+def get_record_updates():
+    pass
+
 
 
 if __name__ == '__main__':
