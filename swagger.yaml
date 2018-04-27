@@ -1,0 +1,137 @@
+swagger: '2.0'
+info:
+  version: '1.0.0'
+  title: Backend for a family tree wiki with face images
+basePath: /v1
+
+securityDefinitions:
+  password:
+    type: oauth2
+    # This should be updated to the Token URL of your OAuth provider.
+    tokenUrl: http://example.com/oauth/token
+    flow: password
+    scopes:
+      write: allows modifying resources
+      read: allows reading resources
+
+security:
+  - password:
+    - read
+    - write
+
+paths:
+  /login_password:
+    get:
+      summary: Login with password
+      operationId: app.login_password
+      security: [ ]
+      responses:
+        200:
+          description: Login successfull
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+        401:
+          description: Login failed
+
+  /object:
+    get:
+      summary: Get latest version of all objects not deleted
+      operationId: app.list_live_objects
+      responses:
+        200:
+          description: List of objects
+          schema:
+            type: array
+            items:
+              - $ref: '#/definitions/Record'
+
+
+definitions:
+  Record:
+    type: object
+    properties:
+      id:
+        type: string
+      version:
+        description: A timestamp in ms since the epoch with the creation time of this cersion of the record
+        type: string
+      type:
+        description: One of Note, Individual or Family
+        type: string
+      author:
+        description: The id of the Individual that created this version of the record
+        type: string
+    example:
+      id: "bb8de34a-4a09-11e8-8405-b8ca3a86c404"
+      version: "1524826672100"
+      type: "Individual"
+
+  Event:
+    allOf:
+      - $ref: "#/definitions/Record"
+      - type: object
+
+  Note:
+    allOf:
+      - $ref: "#/definitions/Record"
+      - type: object
+        properties:
+          text:
+            type: string
+
+
+  Individual:
+    allOf:
+      - $ref: "#/definitions/Record"
+      - type: object
+        properties:
+          sex:
+            description: Contains 'M' for males, 'F' for females
+            type: string
+          name:
+            type: string
+          birth:
+            $ref: "#/definitions/Event"
+          death:
+            $ref: "#/definitions/Event"
+          marriages:
+            type: array
+            items:
+              - $ref: '#/definitions/Event'
+          notes:
+            type: array
+            items:
+              - $ref: '#/definitions/Note'
+
+          user_name:
+            type: string
+          email:
+            type: string
+          password:
+            type: string
+
+  Family:
+    allOf:
+      - $ref: "#/definitions/Record"
+      - type: object
+        properties:
+          husband:
+            description: Id of Induvidual object
+            type: string
+          wife:
+            description: Id of Induvidual object
+            type: string
+          children:
+            type: array
+            items:
+              - type: string
+                description: Id of Induvidual object
+          marriage:
+            type: array
+            items:
+              - $ref: '#/definitions/Event'
+
