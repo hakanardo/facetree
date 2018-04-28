@@ -7,6 +7,7 @@ import os
 from base64 import b64encode
 import string
 import random
+from utils import send_mail
 
 ##################################################################################
 #  Databases
@@ -16,7 +17,6 @@ users = shelve.open("db/users")
 active_tokens = shelve.open("db/active_tokens")
 
 # FIXME: Remove expired tokens
-# FIXME: Mail invites
 # FIXME: Mode without auth for setting things up
 
 
@@ -44,7 +44,17 @@ def user_invite(who):
     email = who['email']
     individual = who['individual']
     password = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(8))
-    print(password)
+    message = """
+    Hej,
+    Du har blivit inbjuden till Petri foto-släktträd på:
+
+        https://facetree.ardoe.net
+
+    Logga in som %s med lösenord %s
+
+        Välkommen!
+    """ % (email, password)
+    send_mail(email, 'Inbjudan till Petri foto-släktträd', message)
     users[email] = {'email': email, 'individual': individual, 'password': generate_password_hash(password)}
     users.sync()
     return "Invitation sent"
