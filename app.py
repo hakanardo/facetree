@@ -1,5 +1,6 @@
 import shelve
 from time import time
+from uuid import uuid4
 
 from werkzeug.security import generate_password_hash, check_password_hash
 import connexion
@@ -10,11 +11,31 @@ import random
 from utils import send_mail
 
 ##################################################################################
+#  Indexes
+##################################################################################
+
+live_records = {}
+
+def update_live_records(key):
+    id, version = key.split(':')
+    old_key = live_records.get(id)
+    if old_key is None:
+        live_records[id] = key
+    else:
+        _, old_version = old_key.split(':')
+        if version > old_version:
+            live_records[id] = key
+
+##################################################################################
 #  Databases
 ##################################################################################
 
 users = shelve.open("db/users")
 active_tokens = shelve.open("db/active_tokens")
+records = shelve.open("db/records")
+
+for key in records.keys():
+    update_live_records(key)
 
 # FIXME: Remove expired tokens
 # FIXME: Mode without auth for setting things up
@@ -68,18 +89,36 @@ def user_password(user, passwords):
     return "Password changed"
 
 ##################################################################################
+# Records
+##################################################################################
+
+def post_record(user, record):
+    if 'id' in record:
+        if len(record['id']) != 36 or ':' in record['id']:
+            return 'Id should be 36 chars long and cant contain ":"', 400
+    else:
+        record['id'] = str(uuid4())
+    record['version'] = str(int(time()*1000))
+    record['author'] = user['individual']
+    key = record['id'] + ':' + record['version']
+    records[key] = record
+    update_live_records(key)
+    records.sync()
+    return record
+
+def get_record(id, version):
+    key = id + ':' + version
+    if key not in records:
+        return 'Not found', 404
+    return records[key]
+
+def get_latest_record(id):
+    if id not in live_records:
+        return 'Not found', 404
+    return records[live_records[id]]
 
 def list_live_records(user):
-    print(user)
-
-def get_latest_record():
-    pass
-
-def get_record():
-    pass
-
-def put_record():
-    pass
+    return [records[key] for key in live_records.values()]
 
 def delete_record():
     pass

@@ -112,6 +112,25 @@ paths:
             type: array
             items:
               - $ref: '#/definitions/Record'
+    post:
+      summary: Create a new (possible the first) version of a record
+      operationId: app.post_record
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: The created record with id and version updated
+          schema:
+            $ref: '#/definitions/Record'
+        400:
+          description: Bad
+      parameters:
+        - name: record
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Record'
+
 
   /records/{id}:
     get:
@@ -132,22 +151,7 @@ paths:
           description: Id of the record to get.
           required: true
           type: string
-    put:
-      summary: Create a new (possible the first) version of a record
-      operationId: app.put_record
-      produces:
-        - application/json;
-      responses:
-        200:
-          description: The created record with id and version updated
-          schema:
-            $ref: '#/definitions/Record'
-      parameters:
-        - name: id
-          in: path
-          description: Id of the record to get.
-          required: true
-          type: string
+
     delete:
       summary: Mark the record with id as deleted
       operationId: app.delete_record
@@ -301,11 +305,6 @@ definitions:
             items:
               - $ref: '#/definitions/Event'
           notes:
-            type: string
-
-          email:
-            type: string
-          password:
             type: string
 
   Family:
