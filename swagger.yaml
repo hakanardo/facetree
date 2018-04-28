@@ -19,7 +19,7 @@ security:
   - oauth2: ['user']
 
 paths:
-  /login_password:
+  /users/login_password:
     post:
       summary: Login with password
       operationId: app.login_password
@@ -51,8 +51,56 @@ paths:
               password:
                 type: string
 
+  /users/invite:
+    post:
+      summary: Invite a new user or reinvite an old user (resets password)
+      operationId: app.user_invite
+      security: [ ]
+      responses:
+        200:
+          description: Successfull
+      parameters:
+        - in: body
+          name: who
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - individual
+            properties:
+              email:
+                type: string
+              individual:
+                type: string
 
-  /record:
+  /users/password:
+    post:
+      summary: Change the password of a user
+      operationId: app.user_password
+      security: [ ]
+      responses:
+        200:
+          description: Successfull
+      parameters:
+        - in: body
+          name: who
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - old_password
+              - new_password
+            properties:
+              email:
+                type: string
+              old_password:
+                type: string
+              new_password:
+                type: string
+
+  /records:
     get:
       summary: Get latest version of all records not deleted
       operationId: app.list_live_records
@@ -66,7 +114,7 @@ paths:
             items:
               - $ref: '#/definitions/Record'
 
-  /record/{id}:
+  /records/{id}:
     get:
       summary: Get latest version of records with id
       operationId: app.get_latest_record
@@ -119,7 +167,7 @@ paths:
           type: string
 
 
-  /record/{id}/{version}:
+  /records/{id}/{version}:
     get:
       summary: Get specific version of records with id
       operationId: app.get_record
@@ -171,7 +219,7 @@ paths:
           required: true
           type: string
 
-  /image/{id}:
+  /images/{id}:
     get:
       summary: Get specific image with id
       operationId: app.get_image
