@@ -19,7 +19,7 @@ security:
   - oauth2: ['user']
 
 paths:
-  /users/login_password:
+  /users/login/password:
     post:
       summary: Login with password
       operationId: app.login_password
@@ -55,7 +55,6 @@ paths:
     post:
       summary: Invite a new user or reinvite an old user (resets password)
       operationId: app.user_invite
-      security: [ ]
       responses:
         200:
           description: Successfull
@@ -78,26 +77,26 @@ paths:
     post:
       summary: Change the password of a user
       operationId: app.user_password
-      security: [ ]
       responses:
         200:
           description: Successfull
+        401:
+          description: Old password does not match
       parameters:
         - in: body
-          name: who
+          name: passwords
           required: true
           schema:
             type: object
             required:
-              - email
-              - old_password
-              - new_password
+              - old
+              - new
             properties:
               email:
                 type: string
-              old_password:
+              old:
                 type: string
-              new_password:
+              new:
                 type: string
 
   /records:

@@ -47,9 +47,15 @@ def user_invite(who):
     print(password)
     users[email] = {'email': email, 'individual': individual, 'password': generate_password_hash(password)}
     users.sync()
+    return "Invitation sent"
 
-def user_password():
-    pass
+def user_password(user, passwords):
+    if not check_password_hash(user['password'], passwords['old']):
+        return "Unauthorized", 401
+    user['password'] = generate_password_hash(passwords['new'])
+    users[user['email']] = user
+    users.sync()
+    return "Password changed"
 
 ##################################################################################
 
