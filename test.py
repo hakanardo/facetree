@@ -109,6 +109,7 @@ class TestAPI(unittest.TestCase):
         assert record_v2['Name'] == 'Håkan Tester Ardö'
         assert record_v2['id'] == record_v1['id']
         assert record_v2['version'] != record_v1['version']
+        assert record_v2['prev_version'] == record_v1['version']
 
         # Check ver1 and ver2
         r = self.get('/v1/records/%s/%s' % (record_v1['id'], record_v1['version']))

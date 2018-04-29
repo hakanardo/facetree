@@ -16,15 +16,14 @@ from utils import send_mail
 
 live_records = {}
 
-def update_live_records(key):
-    id, version = key.split(':')
-    old_key = live_records.get(id)
-    if old_key is None:
-        live_records[id] = key
+def update_live_records(record):
+    id = record['id']
+    old = live_records.get(id)
+    if old is None:
+        live_records[id] = record
     else:
-        _, old_version = old_key.split(':')
-        if version > old_version:
-            live_records[id] = key
+        if record['version'] > old['version']:
+            live_records[id] = record
 
 ##################################################################################
 #  Databases
@@ -34,8 +33,8 @@ users = shelve.open("db/users")
 active_tokens = shelve.open("db/active_tokens")
 records = shelve.open("db/records")
 
-for key in records.keys():
-    update_live_records(key)
+for rec in records.values():
+    update_live_records(rec)
 
 # FIXME: Remove expired tokens
 # FIXME: Mode without auth for setting things up
@@ -98,16 +97,18 @@ def post_record(user, record):
             return 'Id should be 36 chars long and cant contain ":"', 400
     else:
         record['id'] = str(uuid4())
+    if 'version' in record:
+        record['prev_version'] = record['version']
     record['version'] = str(int(time()*1000))
     record['author'] = user['individual']
-    key = record['id'] + ':' + record['version']
+    key = record['version'] + ':' + record['id']
     records[key] = record
-    update_live_records(key)
+    update_live_records(record)
     records.sync()
     return record
 
 def get_record(id, version):
-    key = id + ':' + version
+    key = version + ':' + id
     if key not in records:
         return 'Not found', 404
     return records[key]
@@ -115,10 +116,10 @@ def get_record(id, version):
 def get_latest_record(id):
     if id not in live_records:
         return 'Not found', 404
-    return records[live_records[id]]
+    return live_records[id]
 
 def list_live_records(user):
-    return [records[key] for key in live_records.values()]
+    return [rec for rec in live_records.values()]
 
 def delete_record():
     pass
