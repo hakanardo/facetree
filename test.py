@@ -96,10 +96,10 @@ class TestAPI(Base):
 
     def test_create_and_update_record(self):
         # Create ver1
-        r = self.post('/v1/records', {'type': 'Individual', 'Name': 'Håkan Ardö'})
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Håkan Ardö'})
         assert r.status_code == 200
         record_v1 = r.json
-        assert record_v1['Name'] == 'Håkan Ardö'
+        assert record_v1['name'] == 'Håkan Ardö'
 
         # Check ver1
         r = self.get('/v1/records/%s/%s' % (record_v1['id'], record_v1['version']))
@@ -111,11 +111,11 @@ class TestAPI(Base):
 
         # Create ver2
         record = dict(record_v1)
-        record['Name'] = 'Håkan Tester Ardö'
+        record['name'] = 'Håkan Tester Ardö'
         r = self.post('/v1/records', record)
         assert r.status_code == 200
         record_v2 = r.json
-        assert record_v2['Name'] == 'Håkan Tester Ardö'
+        assert record_v2['name'] == 'Håkan Tester Ardö'
         assert record_v2['id'] == record_v1['id']
         assert record_v2['version'] != record_v1['version']
         assert record_v2['prev_version'] == record_v1['version']
@@ -132,7 +132,7 @@ class TestAPI(Base):
         assert r.json == record_v2
 
         # Add another record and list records
-        r = self.post('/v1/records', {'type': 'Individual', 'Name': 'Björn Ardö'})
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Björn Ardö'})
         assert r.status_code == 200
         record2 = r.json
         r = self.get('/v1/records')
@@ -149,7 +149,28 @@ class TestAPI(Base):
         assert record2 in records
         assert record_v1 not in records
 
+    def test_history(self):
+        # Create some records
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Kajsa'})
+        assert r.status_code == 200
+        record = r.json
+        assert self.post('/v1/records', {'type': 'Individual', 'name': 'Kalle'}).status_code == 200
+        assert self.post('/v1/records', {'type': 'Individual', 'name': 'Olle'}).status_code == 200
+        assert self.post('/v1/records', {'type': 'Individual', 'name': 'Sven'}).status_code == 200
+        assert self.post('/v1/records', {'type': 'Individual', 'name': 'Nils'}).status_code == 200
+        record['name'] = 'Kajsa Ver2'
+        assert self.post('/v1/records', record).status_code == 200
 
+        # Check history
+        r = self.get('/v1/history/NOW/2')
+        assert r.status_code == 200
+        records = r.json['records']
+        assert [r['name'] for r in records] == ['Kajsa Ver2', 'Nils']
+        r = self.get('/v1/history/%s/4' % r.json['before'])
+        assert r.status_code == 200
+        records2 = r.json['records']
+        assert [r['name'] for r in records2] == ['Sven', 'Olle', 'Kalle', 'Kajsa']
+        assert records[0]['id'] == records2[3]['id']
 
 
 

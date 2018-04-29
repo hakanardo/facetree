@@ -1,4 +1,5 @@
 import shelve
+from threading import Lock
 from time import time
 from uuid import uuid4
 
@@ -10,23 +11,33 @@ import string
 import random
 from utils import send_mail
 
+
 ##################################################################################
 #  Indexes
 ##################################################################################
 
 live_records = {}
+history = []
+history_lock = Lock() # Just to ensure records become sorted by timestamps
 
-def update_live_records(record):
+def update_indexes(record):
+    # history
+    with history_lock:
+        record['version'] = str(int(time() * 1000))
+        history.append(record)
+
+    # live_records
     id = record['id']
     old = live_records.get(id)
     if old is None:
         live_records[id] = record
     else:
-        if record['version'] > old['version']:
+        if record['version'] >= old['version']:
             if record['type'] == '__DELETED__':
                 del live_records[id]
             else:
                 live_records[id] = record
+
 
 ##################################################################################
 #  Databases
@@ -36,8 +47,8 @@ users = shelve.open("db/users")
 active_tokens = shelve.open("db/active_tokens")
 records = shelve.open("db/records")
 
-for rec in records.values():
-    update_live_records(rec)
+for _, rec in sorted(records.items()):
+    update_indexes(rec)
 
 # FIXME: Remove expired tokens
 # FIXME: Mode without auth for setting things up
@@ -90,6 +101,7 @@ def user_password(user, passwords):
     users.sync()
     return "Password changed"
 
+
 ##################################################################################
 # Records
 ##################################################################################
@@ -102,11 +114,10 @@ def post_record(user, record):
         record['id'] = str(uuid4())
     if 'version' in record:
         record['prev_version'] = record['version']
-    record['version'] = str(int(time()*1000))
     record['author'] = user['individual']
+    update_indexes(record)
     key = record['version'] + ':' + record['id']
     records[key] = record
-    update_live_records(record)
     records.sync()
     return record
 
@@ -130,14 +141,36 @@ def delete_record(user, id):
     post_record(user, record)
     return "Deleted"
 
+def get_record_history(before, limit):
+    if before == 'NOW':
+        before = len(history)
+    else:
+        before = int(before)
+    nxt = max(before - int(limit), 0)
+    res = {'records': history[nxt:before][::-1]}
+    if nxt > 0:
+        res['before'] = str(nxt)
+    return res
+
+def get_record_updates():
+    pass
+
+
+
+##################################################################################
+# Images
+##################################################################################
+
 def get_image():
     pass
 
 def put_image():
     pass
 
-def get_record_updates():
-    pass
+
+##################################################################################
+# App
+##################################################################################
 
 app = connexion.App(__name__, port=8000)
 app.add_api('swagger.yaml')

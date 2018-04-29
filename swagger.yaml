@@ -222,6 +222,39 @@ paths:
           required: true
           type: string
 
+  /history/{before}/{limit}:
+    get:
+      summary: Get the history of the data as an array of records
+      description: The history will start with the most recent version of all of thes record and then progress backward in time.
+      operationId: app.get_record_history
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: Record
+          schema:
+            type: object
+            properties:
+              before:
+                type: string
+              records:
+                type: array
+                items:
+                  - $ref: '#/definitions/Record'
+        400:
+          description: Bad before token
+      parameters:
+        - name: before
+          in: path
+          description: Token specifying how old records to return. Set it to 'NOW' for the first request and then to the before property of previous responses.
+          required: true
+          type: string
+        - name: limit
+          in: path
+          description: The maximum number of records to return.
+          required: true
+          type: string
+
   /images/{id}:
     get:
       summary: Get specific image with id
