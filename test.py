@@ -9,8 +9,7 @@ os.system("cp test_db/* db") # Must be done before app is imported
 from app import app
 client = app.app.test_client()
 
-class TestAPI(unittest.TestCase):
-
+class Base(unittest.TestCase):
     def plain_post(self, path, body, auth=None):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
         return client.post(path, content_type='application/json', data=json.dumps(body), headers=headers)
@@ -22,6 +21,10 @@ class TestAPI(unittest.TestCase):
     def plain_get(self, path, auth=None):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
         return client.get(path, headers=headers)
+
+    def plain_delete(self, path, auth=None):
+        headers = {'Authorization': 'Bearer ' + auth} if auth else {}
+        return client.delete(path, headers=headers)
 
     def post(self, path, body):
         assert self.plain_post(path, body).status_code == 401
@@ -35,6 +38,12 @@ class TestAPI(unittest.TestCase):
         assert self.plain_get(path).status_code == 401
         return self.plain_get(path, self.auth)
 
+    def delete(self, path):
+        assert self.plain_delete(path).status_code == 401
+        return self.plain_delete(path, self.auth)
+
+
+class TestAPI(Base):
     def setUp(self):
         r = self.plain_post('/v1/users/login/password', {"email": "hakan@debian.org", "password": "7tsLKBZo"})
         assert r.status_code == 200
@@ -129,6 +138,14 @@ class TestAPI(unittest.TestCase):
         r = self.get('/v1/records')
         records = r.json
         assert record_v2 in records
+        assert record2 in records
+        assert record_v1 not in records
+
+        # Delete original record
+        r = self.delete('v1/records/%s' % record_v1['id'])
+        r = self.get('/v1/records')
+        records = r.json
+        assert record_v2 not in records
         assert record2 in records
         assert record_v1 not in records
 

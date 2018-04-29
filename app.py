@@ -23,7 +23,10 @@ def update_live_records(record):
         live_records[id] = record
     else:
         if record['version'] > old['version']:
-            live_records[id] = record
+            if record['type'] == '__DELETED__':
+                del live_records[id]
+            else:
+                live_records[id] = record
 
 ##################################################################################
 #  Databases
@@ -121,8 +124,11 @@ def get_latest_record(id):
 def list_live_records(user):
     return [rec for rec in live_records.values()]
 
-def delete_record():
-    pass
+def delete_record(user, id):
+    record = get_latest_record(id)
+    record = {'id': record['id'], 'version': record['version'], 'type': '__DELETED__'}
+    post_record(user, record)
+    return "Deleted"
 
 def get_image():
     pass

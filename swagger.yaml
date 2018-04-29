@@ -276,7 +276,7 @@ definitions:
         description: A timestamp in ms since the epoch with the creation time of this cersion of the record
         type: string
       type:
-        description: Either Individual or Family specifying what kind of record it is
+        description: Either Individual or Family or ... specifying what kind of record it is
         type: string
       author:
         description: The id of the Individual that created this version of the record
