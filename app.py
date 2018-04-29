@@ -1,5 +1,5 @@
 import shelve
-from threading import Lock
+from threading import Lock, Condition
 from time import time
 from uuid import uuid4
 
@@ -18,13 +18,14 @@ from utils import send_mail
 
 live_records = {}
 history = []
-history_lock = Lock() # Just to ensure records become sorted by timestamps
+history_condition = Condition()
 
 def update_indexes(record):
     # history
-    with history_lock:
-        record['version'] = str(int(time() * 1000))
+    with history_condition:
+        record['version'] = str(int(time() * 1000)) # To make sure history becomes sorted by version
         history.append(record)
+        history_condition.notify_all()
 
     # live_records
     id = record['id']
@@ -152,9 +153,17 @@ def get_record_history(before, limit):
         res['before'] = str(nxt)
     return res
 
-def get_record_updates():
-    pass
-
+def get_record_updates(since):
+    if since == 'NOW':
+        since = len(history)
+    else:
+        since = int(since)
+    if len(history) <= since:
+        with history_condition:
+            if len(history) <= since:
+                history_condition.wait(100)
+    recs = history[since:]
+    return {'records': recs, 'since': str(since + len(recs))}
 
 
 ##################################################################################

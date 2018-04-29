@@ -1,4 +1,5 @@
 import unittest
+from threading import Thread
 
 import utils
 from flask import json
@@ -172,5 +173,33 @@ class TestAPI(Base):
         assert [r['name'] for r in records2] == ['Sven', 'Olle', 'Kalle', 'Kajsa']
         assert records[0]['id'] == records2[3]['id']
 
+    def test_updates(self):
+        # Start longpoll and add som data
+        poll = LongPoll(self, '/v1/updates/NOW')
+        poll.start()
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Kalle'})
+        assert r.status_code == 200
+        poll.join()
+        assert poll.result.status_code == 200
+        assert poll.result.json['records'][0] == r.json
+
+        # Add more data
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Olle'})
+        r = self.post('/v1/records', {'type': 'Individual', 'name': 'Nils'})
+
+        # Poll again
+        r = self.get('/v1/updates/%s' % poll.result.json['since'])
+        assert r.status_code == 200
+        records = r.json['records']
+        assert [r['name'] for r in records] == ['Olle', 'Nils']
 
 
+
+class LongPoll(Thread):
+    def __init__(self, test, path):
+        Thread.__init__(self)
+        self.test = test
+        self.path = path
+
+    def run(self):
+        self.result = self.test.get(self.path)
