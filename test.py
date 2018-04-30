@@ -1,23 +1,35 @@
 import unittest
 from threading import Thread
+from uuid import uuid4
 
 import utils
-from flask import json
+from flask.json import dumps as json_dumps
 import os
 from unittest.mock import patch
 
-os.system("cp test_db/* db") # Must be done before app is imported
+# Must be done before app is imported
+os.system("mkdir images db junk")
+os.system("mv db/* images/* junk")
+os.system("cp test_db/* db")
+os.system("cp test_images/* images")
+
 from app import app
 client = app.app.test_client()
 
 class Base(unittest.TestCase):
-    def plain_post(self, path, body, auth=None):
+    def plain_post(self, path, body, auth=None, json=True):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
-        return client.post(path, content_type='application/json', data=json.dumps(body), headers=headers)
+        if json:
+            return client.post(path, content_type='application/json', data=json_dumps(body), headers=headers)
+        else:
+            return client.post(path, data=body, headers=headers)
 
-    def plain_put(self, path, body, auth=None):
+    def plain_put(self, path, body, auth=None, json=True):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
-        return client.put(path, content_type='application/json', data=json.dumps(body), headers=headers)
+        if json:
+            return client.put(path, content_type='application/json', data=json_dumps(body), headers=headers)
+        else:
+            return client.put(path, data=body, headers=headers)
 
     def plain_get(self, path, auth=None):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
@@ -27,13 +39,13 @@ class Base(unittest.TestCase):
         headers = {'Authorization': 'Bearer ' + auth} if auth else {}
         return client.delete(path, headers=headers)
 
-    def post(self, path, body):
-        assert self.plain_post(path, body).status_code == 401
-        return self.plain_post(path, body, self.auth)
+    def post(self, path, body, json=True):
+        assert self.plain_post(path, body, json=json).status_code == 401
+        return self.plain_post(path, body, self.auth, json=json)
 
-    def put(self, path, body):
-        assert self.plain_put(path, body).status_code == 401
-        return self.plain_put(path, body, self.auth)
+    def put(self, path, body, json=True):
+        assert self.plain_put(path, body, json=json).status_code == 401
+        return self.plain_put(path, body, self.auth, json=json)
 
     def get(self, path):
         assert self.plain_get(path).status_code == 401
@@ -193,6 +205,18 @@ class TestAPI(Base):
         records = r.json['records']
         assert [r['name'] for r in records] == ['Olle', 'Nils']
 
+    def test_get_image(self):
+        r = self.get("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b.jpg")
+        assert r.status_code == 200
+        assert len(r.data) == 166640
+
+    def test_post_image(self):
+        r = self.post("/v1/images", b'Good', json=False)
+        assert r.status_code == 200
+        id = r.json['id']
+        r = self.get("/v1/images/%s" % id)
+        assert r.status_code == 200
+        assert r.data == b'Good'
 
 
 class LongPoll(Thread):

@@ -170,11 +170,18 @@ def get_record_updates(since):
 # Images
 ##################################################################################
 
-def get_image():
-    pass
+def post_image(image):
+    id = str(uuid4()) + '.jpg'
+    fn = "images/%s" % id
+    if os.path.exists(fn):
+        return post_image(image) # Retry
+    with open(fn, "wb") as fd:
+        fd.write(image)
+        return {'id': id}
 
-def put_image():
-    pass
+def get_image(id):
+    with open("images/%s" % id, "rb") as fd:
+        return fd.read()
 
 
 ##################################################################################

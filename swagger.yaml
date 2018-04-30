@@ -255,6 +255,25 @@ paths:
           required: true
           type: string
 
+  /images:
+    post:
+      summary: Create a new image
+      operationId: app.post_image
+      produces:
+        - application/json;
+      consumes:
+         - image/jpeg
+      responses:
+        200:
+          description: Ok
+      parameters:
+        - name: image
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+
   /images/{id}:
     get:
       summary: Get specific image with id
@@ -272,23 +291,6 @@ paths:
           description: Id of image to get.
           required: true
           type: string
-    put:
-      summary: Create a new image with id
-      operationId: app.put_image
-      produces:
-        - image/jpeg;
-      responses:
-        200:
-          description: Ok
-        401:
-          description: The image already excists. We dont allow it to be overwritten.
-      parameters:
-        - name: id
-          in: path
-          description: Id of image to get.
-          required: true
-          type: string
-
 
 
 definitions:
