@@ -11,6 +11,7 @@ import string
 import random
 from utils import send_mail
 
+from PIL import Image
 
 ##################################################################################
 #  Indexes
@@ -171,16 +172,28 @@ def get_record_updates(since):
 ##################################################################################
 
 def post_image(image):
-    id = str(uuid4()) + '.jpg'
-    fn = "images/%s" % id
-    if os.path.exists(fn):
+    id = str(uuid4())
+    dn = "images/%s" % id
+    if os.path.exists(dn):
         return post_image(image) # Retry
+    os.mkdir(dn)
+    fn = os.path.join(dn, "original.jpg")
     with open(fn, "wb") as fd:
         fd.write(image)
         return {'id': id}
 
-def get_image(id):
-    with open("images/%s" % id, "rb") as fd:
+image_sizes = {"thumb": 256, "full": 1024}
+def get_image(id, width):
+    if width in image_sizes:
+        width = image_sizes[width]
+    fn = "images/%s/%s.jpg" % (id, width)
+    if not os.path.exists(fn):
+        img = Image.open("images/%s/original.jpg" % (id))
+        w, h = img.size
+        width = int(width)
+        img = img.resize((width, int(h * width / w)))
+        img.save(fn)
+    with open(fn, "rb") as fd:
         return fd.read()
 
 

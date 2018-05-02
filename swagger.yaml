@@ -274,7 +274,7 @@ paths:
             type: string
             format: binary
 
-  /images/{id}:
+  /images/{id}/{width}.jpg:
     get:
       summary: Get specific image with id
       operationId: app.get_image
@@ -289,6 +289,11 @@ paths:
         - name: id
           in: path
           description: Id of image to get.
+          required: true
+          type: string
+        - name: width
+          in: path
+          description: Width of image in pixels or "thumb" for default thumbnail size (256 pixels wide), "full" for default fullscreen size (1024 pixels wide) or "original" for the originaly upladed image.
           required: true
           type: string
 

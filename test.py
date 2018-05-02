@@ -2,6 +2,9 @@ import unittest
 from threading import Thread
 from uuid import uuid4
 
+from PIL import Image
+from io import BytesIO
+
 import utils
 from flask.json import dumps as json_dumps
 import os
@@ -11,7 +14,7 @@ from unittest.mock import patch
 os.system("mkdir images db junk")
 os.system("mv db/* images/* junk")
 os.system("cp test_db/* db")
-os.system("cp test_images/* images")
+os.system("cp -r test_images/* images")
 
 from app import app
 client = app.app.test_client()
@@ -206,7 +209,7 @@ class TestAPI(Base):
         assert [r['name'] for r in records] == ['Olle', 'Nils']
 
     def test_get_image(self):
-        r = self.get("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b.jpg")
+        r = self.get("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b/original.jpg")
         assert r.status_code == 200
         assert len(r.data) == 166640
 
@@ -214,10 +217,15 @@ class TestAPI(Base):
         r = self.post("/v1/images", b'Good', json=False)
         assert r.status_code == 200
         id = r.json['id']
-        r = self.get("/v1/images/%s" % id)
+        r = self.get("/v1/images/%s/original.jpg" % id)
         assert r.status_code == 200
         assert r.data == b'Good'
 
+    def test_rescale_image(self):
+        r = self.get("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b/thumb.jpg")
+        assert r.status_code == 200
+        img = Image.open(BytesIO(r.data))
+        assert img.size == (256, 336)
 
 class LongPoll(Thread):
     def __init__(self, test, path):
