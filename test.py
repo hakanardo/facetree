@@ -5,18 +5,22 @@ from uuid import uuid4
 from PIL import Image
 from io import BytesIO
 
+from werkzeug.security import generate_password_hash
+
 import utils
 from flask.json import dumps as json_dumps
 import os
 from unittest.mock import patch
+from flask.wrappers import Response
 
 # Must be done before app is imported
-os.system("mkdir images db junk")
-os.system("mv db/* images/* junk")
-os.system("cp test_db/* db")
-os.system("cp -r test_images/* images")
+os.system("mkdir db")
+os.system("rm -r db/*")
+os.system("cp -r test_db/images db")
 
-from app import app
+from app import app, users
+email = "hakan@debian.org"
+users[email] = {'email': email, 'individual': 'xxx', 'password': generate_password_hash("7tsLKBZo")}
 client = app.app.test_client()
 
 class Base(unittest.TestCase):
@@ -235,3 +239,6 @@ class LongPoll(Thread):
 
     def run(self):
         self.result = self.test.get(self.path)
+
+if __name__ == '__main__':
+    unittest.main()
