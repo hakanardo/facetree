@@ -1,5 +1,5 @@
 import shelve
-from threading import Lock, Condition
+from threading import Condition
 from time import time
 from uuid import uuid4
 
@@ -173,7 +173,7 @@ def get_record_updates(since):
 
 def post_image(image):
     id = str(uuid4())
-    dn = "images/%s" % id
+    dn = "db/images/%s" % id
     if os.path.exists(dn):
         return post_image(image) # Retry
     os.mkdir(dn)
@@ -186,9 +186,9 @@ image_sizes = {"thumb": 256, "full": 1024}
 def get_image(id, width):
     if width in image_sizes:
         width = image_sizes[width]
-    fn = "images/%s/%s.jpg" % (id, width)
+    fn = "db/images/%s/%s.jpg" % (id, width)
     if not os.path.exists(fn):
-        img = Image.open("images/%s/original.jpg" % (id))
+        img = Image.open("db/images/%s/original.jpg" % (id))
         w, h = img.size
         width = int(width)
         img = img.resize((width, int(h * width / w)))
@@ -203,6 +203,8 @@ def get_image(id, width):
 
 app = connexion.App(__name__, port=8000)
 app.add_api('swagger.yaml')
+# app.app.config['SERVER_NAME'] = 'localhost:8080'
+print(app.app.config['SERVER_NAME'])
 
 if __name__ == '__main__':
     app.run()
