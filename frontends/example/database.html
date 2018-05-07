@@ -1,0 +1,83 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Login example</title>
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+</head>
+
+<body>
+<script>
+    database = {
+        "individuals": {},
+        "families": {},
+        "parentin": {},
+        "childin": {}
+    };
+
+    function database_add_records(records) {
+        for (var i in records) {
+            var rec = records[i];
+            if (rec.type == 'Individual') {
+                if (!database.individuals[rec.id] || database.individuals[rec.id].version < rec.version) {
+                    database.individuals[rec.id] = rec;
+                }
+            } else if (rec.type == 'Family') {
+                if (!database.families[rec.id] || database.families[rec.id].version < rec.version) {
+                    database.families[rec.id] = rec;
+                }
+            } else {
+                console.log("Unknown record type:", rec);
+            }
+        }
+    }
+
+    function database_poll(since) {
+        setTimeout(function () {
+            axios.get(facetree_backend + "/v1/updates/" + since, {"headers": auth_headers})
+            .then(function (response) {
+                auth_token = response.data.token;
+                database_add_records(response.data.records);
+                database_poll(response.data.since);
+            })
+            .catch(function (error) {
+                console.log("Database longpoll failed.", error)
+            });
+
+        }, 1);
+    }
+
+    function database_download() {
+        axios.get(facetree_backend + "/v1/records", {"headers": auth_headers})
+        .then(function (response) {
+            database_add_records(response.data);
+        })
+        .catch(function (error) {
+            console.log("Records failed.", error)
+        });
+    }
+
+    axios.post(facetree_backend + "/v1/users/login/password",{
+      "email": "hakan@debian.org",
+      "password": "7tsLKBZo"
+    })
+    .then(function (response) {
+        auth_headers = {"Authorization": "Bearer " + response.data.token};
+        database_poll("NOW");
+        setTimeout(database_download, 10);
+    })
+    .catch(function (error) {
+        console.log("Login failed.")
+        console.log(error);
+    });
+
+</script>
+</body>
+</html>

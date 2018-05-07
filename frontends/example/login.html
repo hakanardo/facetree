@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Login example</title>
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+</head>
+
+<body>
+<script>
+
+    axios.post(facetree_backend + "/v1/users/login/password",{
+      "email": "hakan@debian.org",
+      "password": "7tsLKBZo"
+    })
+    .then(function (response) {
+        console.log("Success! Token: " + response.data.token);
+    })
+    .catch(function (error) {
+        console.log(error);
+    });
+
+</script>
+</body>
+</html>

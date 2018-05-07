@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from werkzeug.security import generate_password_hash, check_password_hash
 import connexion
+from flask_cors import CORS
 import os
 from base64 import b64encode
 import string
@@ -203,8 +204,7 @@ def get_image(id, width):
 
 app = connexion.App(__name__, port=8000)
 app.add_api('swagger.yaml')
-# app.app.config['SERVER_NAME'] = 'localhost:8080'
-print(app.app.config['SERVER_NAME'])
+CORS(app.app)
 
 if __name__ == '__main__':
     app.run()
