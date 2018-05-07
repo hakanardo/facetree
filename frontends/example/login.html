@@ -16,12 +16,12 @@
 <body>
 <script>
 
-    axios.post(facetree_backend + '/v1/users/login/password',{
+    axios.post(facetree_backend + "/v1/users/login/password",{
       "email": "hakan@debian.org",
       "password": "7tsLKBZo"
     })
     .then(function (response) {
-        console.log('Success! Token: ' + response.data.token);
+        console.log("Success! Token: " + response.data.token);
     })
     .catch(function (error) {
         console.log(error);
