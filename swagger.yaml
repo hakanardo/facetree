@@ -274,6 +274,46 @@ paths:
             type: string
             format: binary
 
+  /images/{id}/crop:
+    post:
+      summary: Create a new image by cropping an existing image
+      operationId: app.image_crop
+      produces:
+        - application/json;
+      responses:
+        200:
+          description: The created record with id and version updated
+          schema:
+            $ref: '#/definitions/Record'
+        400:
+          description: Bad
+      parameters:
+        - name: id
+          in: path
+          description: Id of image to crop.
+          required: true
+          type: string
+        - name: box
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - left
+              - upper
+              - right
+              - lower
+            properties:
+              left:
+                type: integer
+              upper:
+                type: integer
+              right:
+                type: integer
+              lower:
+                type: integer
+
+
   /images/{id}/{width}.jpg:
     get:
       summary: Get specific image with id
@@ -296,7 +336,6 @@ paths:
           description: Width of image in pixels or "thumb" for default thumbnail size (256 pixels wide), "full" for default fullscreen size (1024 pixels wide) or "original" for the originaly upladed image.
           required: true
           type: string
-
 
 definitions:
   Event:

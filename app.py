@@ -179,9 +179,17 @@ def post_image(image):
         return post_image(image) # Retry
     os.mkdir(dn)
     fn = os.path.join(dn, "original.jpg")
-    with open(fn, "wb") as fd:
-        fd.write(image)
-        return {'id': id}
+    if isinstance(image, Image.Image):
+        image.save(fn)
+    else:
+        with open(fn, "wb") as fd:
+            fd.write(image)
+    return {'id': id}
+
+def image_crop(id, box):
+    img = Image.open("db/images/%s/original.jpg" % (id))
+    img = img.crop((box["left"], box["upper"], box["right"], box["lower"]))
+    return post_image(img)
 
 image_sizes = {"thumb": 256, "full": 1024}
 def get_image(id, width):
@@ -196,6 +204,7 @@ def get_image(id, width):
         img.save(fn)
     with open(fn, "rb") as fd:
         return fd.read()
+
 
 
 ##################################################################################

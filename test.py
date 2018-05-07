@@ -231,6 +231,15 @@ class TestAPI(Base):
         img = Image.open(BytesIO(r.data))
         assert img.size == (256, 336)
 
+    def test_crop_image(self):
+        r = self.post("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b/crop",
+                      {"left": 10, "upper": 10, "right": 100, "lower": 100})
+        assert r.status_code == 200
+        r = self.get("/v1/images/%s/original.jpg" % (r.json['id']))
+        assert r.status_code == 200
+        img = Image.open(BytesIO(r.data))
+        assert img.size == (90, 90)
+
 class LongPoll(Thread):
     def __init__(self, test, path):
         Thread.__init__(self)
