@@ -1,0 +1,3 @@
+Enforse previous version when updating record
+Use separate creation/modifications time in addition to version
+Add a face detetcion api to the backend
