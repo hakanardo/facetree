@@ -7,8 +7,8 @@ class dbImport:
         if not auth: raise Exception("No user data provided")
         path = "%s/%s/users/login/password" % (serverUrl, prefix)
         self.url = "%s/%s" % (serverUrl, prefix)
-        #r = requests.post(path, data = json_dumps(auth),
-        #                  headers = {"Content-Type": "application/json"})
+        r = requests.post(path, data = json_dumps(auth),
+                         headers = {"Content-Type": "application/json"})
         r = requests.post(path, json = auth)
         assert r.status_code == 200
         self.auth = r.json()['token']
@@ -22,8 +22,9 @@ class dbImport:
 
     def save_image(self, imageData):
         path = "%s/images" % (self.url)
-        r = requests.post(path, data = {"image": imageData}, headers=self.authHeader)
-        #print(r.text)
+        hdr = {"Content-Type": "image/jpeg"}
+        hdr.update(self.authHeader)
+        r = requests.post(path, data = imageData, headers=hdr)
         assert r.status_code == 200
         return r.json()['id']
 
@@ -38,3 +39,5 @@ class dbImport:
         assert r.status_code == 200
         return r.json()
 
+
+# print(dbImport(auth={"email": "hakan@debian.org", "password": "7tsLKBZo"}).save_image(open("junk/hakan.jpg", "br").read()))

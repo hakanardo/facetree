@@ -266,6 +266,8 @@ paths:
       responses:
         200:
           description: Ok
+        400:
+          description: Bad
       parameters:
         - name: image
           in: body
