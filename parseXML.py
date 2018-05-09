@@ -5,6 +5,7 @@ from os import access, R_OK
 from os.path import isfile
 import re
 import xml.etree.ElementTree as ET
+from PIL import Image
 TEST = True
 from dbAPI import dbImport
 dbAPI = dbImport(auth = {"email": "hakan@debian.org", "password": "7tsLKBZo"})
@@ -38,6 +39,38 @@ def dateToInt(date):
         dateInt = int(year)
     return dateInt
 
+def handleEvent(ev, type):
+    loc = {'eventType': type, 'from': 0}
+    try:
+        dat = ev.find("mx:dateval", ns).attrib['val']
+        d = dateToInt(dat)
+        loc['from'] = d
+        if type in ('Birth', 'Death'):
+            try:
+                rec[type] = dat
+            except:
+                try:
+                    rec[type] = dat
+                except: pass
+    except: pass
+    for field in ("mx:daterange", "mx:datespan"):
+        try:
+            dates = ev.find(field, ns)
+            loc['from'] = dateToInt(dates.attrib['start'])
+            loc['to'] = dateToInt(dates.attrib['stop'])
+            #break  ??
+        except: pass
+    place = ev.find("mx:place", ns)
+    try:
+        handle = place.attrib['hlink']
+        placeobj = places.find("mx:placeobj[@handle='%s']" % handle, ns)
+        coord = placeobj.find("mx:coord", ns)
+        loc['long'] = coord.attrib['long']
+        loc['lat'] = coord.attrib['lat']
+    except: pass
+    #Evt iterate over placeref in placeobj until coord found?
+    return loc
+
 families = treeRoot.find("mx:families", ns)
 persons = treeRoot.find("mx:people", ns)
 events = treeRoot.find("mx:events", ns)
@@ -45,6 +78,7 @@ places = treeRoot.find("mx:places", ns)
 tags = treeRoot.find("mx:tags", ns)
 objects = treeRoot.find("mx:objects", ns)
 gedId2Id = {}
+file2Id = {}
 """
 Individuals Gramps XML
     <person handle="_bed6a8642ca7eedcafb38bca211" change="1493358091" id="I0001">
@@ -81,12 +115,14 @@ Individuals Gramps XML
 
     <object handle="_c06b56c58f646456aec9a935a7d" change="1475497866" id="O0002">
       <file src="/data/Pictures/Arkiv ARDO/2011/2011 08 Vka DK/IMG_7529.JPG" mime="image/jpeg" description="IMG_7529"/>
+      <dateval val="2006"/>
 """
 for person in persons.findall("mx:person", ns):
     pid = person.attrib['id']
     name = namestr(person.find("mx:name", ns)) #Bara type Birth name?
+    sex = person.find("mx:gender", ns).text
     #print('%s: %s' % (pid, name))
-    rec = {'type': 'Individual', 'author': 'Gramps', 'gedId': pid, 'name': name}
+    rec = {'type': 'Individual', 'author': 'Gramps', 'gedId': pid, 'name': name, 'sex': sex}
     imgFn = None
     locs = []
     #events
@@ -95,39 +131,8 @@ for person in persons.findall("mx:person", ns):
         ev = events.find("mx:event[@handle='%s']" % handle, ns)
         type = ev.find("mx:type", ns).text
         if type in ('Birth', 'Residence', 'Death', 'Burial'): #CHR?
-            loc = {'from': 0}
-            try:
-                dat = ev.find("mx:dateval", ns).attrib['val']
-                d = dateToInt(dat)
-                loc['from'] = d
-                if type in ('Birth', 'Death'):
-                    try:
-                        rec[type] = dat
-                    except:
-                        try:
-                            rec[type] = dat
-                        except: pass
-            except: pass
-            for field in ("mx:daterange", "mx:datespan"):
-                try:
-                    dates = ev.find(field, ns)
-                    loc['from'] = dateToInt(dates.attrib['start'])
-                    loc['to'] = dateToInt(dates.attrib['stop'])
-                    #break  ??
-                except: pass
-            place = ev.find("mx:place", ns)
-            try:
-                handle = place.attrib['hlink']
-                placeobj = places.find("mx:placeobj[@handle='%s']" % handle, ns)
-                coord = placeobj.find("mx:coord", ns)
-                loc['long'] = coord.attrib['long']
-                loc['lat'] = coord.attrib['lat']
-            except: pass
-            #Evt iterate over placeref in placeobj until coord found?
-            locs.append(loc)
+            locs.append(handleEvent(ev, type))
     #tags
-    #for tag in person.findall("mx:tagref", ns):
-    #    handle = tag.attrib['hlink']
     for handle in getHandles(person, 'tagref'):
         tagobj = tags.find("mx:tag[@handle='%s']" % handle, ns)
         if tagobj.attrib['name'] != 'Petri':
@@ -149,27 +154,76 @@ for person in persons.findall("mx:person", ns):
     """
     #Images
     rec['imageIds'] = []
-    #for objref in person.findall("mx:objref", ns):
-    #    handle = objref.attrib['hlink']
-    for handle in getHandles(person, 'objref'):
-        image = objects.find("mx:object[@handle='%s']" % handle, ns)
+    #for handle in getHandles(person, 'objref'):
+    i=0
+    for objref in person.findall("mx:objref", ns):
+        handle = objref.attrib['hlink']
+        object = objects.find("mx:object[@handle='%s']" % handle, ns)
+        cropedId = '?'
+        i+=1
         try:
-            file = image.find("mx:file", ns)
+            file = object.find("mx:file", ns)
             imageFile = file.attrib['src']
             if isfile(imageFile) and access(imageFile, R_OK):
-                #FIX extract region, crop image
-                fil = open(imageFile, 'rb')
-                image = fil.read()
-                fil.close()
-                rec['imageIds'].append(dbAPI.save_image(image))
+                if not file2Id.get(imageFile):
+                    fil = open(imageFile, 'rb')
+                    image = fil.read()
+                    fil.close()
+                    #rec['imageIds'].append(dbAPI.save_image(image))
+                    id = dbAPI.save_image(image)
+                    file2Id[imageFile] = id
+                    cropedId = id
+                    #print("%s %d %s" % (imageFile, len(image), cropedId))
+                #Try to crop image
+                try:
+                    #print('try region')
+                    #ET.dump(objref)
+                    region = objref.find("mx:region", ns)
+                    x1 = int(region.attrib['corner1_x'])
+                    y1 = int(region.attrib['corner1_y'])
+                    x2 = int(region.attrib['corner2_x'])
+                    y2 = int(region.attrib['corner2_y'])
+                    #print("  %d %d - %d %d" % (x1, y1, x2, y2))
+                    im = Image.open(imageFile)
+                    #print ('  width: %d - height: %d' % im.size) # returns (width, height) tuple
+                    (width, height) = im.size
+                    left = int(width * min(x1, x2)/100.)
+                    right = int(width * max(x1, x2)/100.)
+                    upper = int(height * min(y1, y2)/100.)
+                    lower = int(height * max(y1, y2)/100.)
+                    #TMP
+                    #print("Crop to %d %d %d %d" % (left, upper, right, lower))
+                    from io import BytesIO
+                    cropedIm = BytesIO()
+                    im.crop((left, upper, right, lower)).save(cropedIm, 'JPEG')
+                    cropedId = dbAPI.save_image(cropedIm.getvalue())
+                    #print("Saved cropped im %s", cropedId)
+                    #TMP
+                    #cropedId = dbAPI.crop_image(file2Id[imageFile], left, upper, right, lower)
+                except:
+                    #print('except region')
+                    pass
+                #Date <dateval>
+                dat = None
+                try:
+                    #ET.dump(object)
+                    dat = object.find("mx:dateval", ns).attrib['val']
+                except:
+                    #print('except dat')
+                    pass
+                #print("  End %s %s" % (dat, cropedId))
+                rec['imageIds'].append((dat, cropedId))
         except:
-            print('Error saving %s' % imageFile)
+            #print('Error saving %s' % imageFile)
             pass
+        #print('------END image------')
+        #if i>=2: sys.exit()
     if locs:
         rec['location'] = sorted(locs, key=lambda x: x['from'])
     #print(rec)
     id = dbAPI.create_record(rec)
     gedId2Id[rec['gedId']] = id
+    #print('---------------end person')
     if TEST:
         if rec['gedId']=='I0028': testId = id #TEST
 
@@ -196,8 +250,13 @@ for family in families.findall("mx:family", ns):
             rec[parent] = gedId2Id[person.attrib['id']]
         except Exception as ex:
             pass
-    #for childref in family.findall("mx:childref", ns):
-    #    handle = childref.attrib['hlink']
+    marriages = []
+    for handle in getHandles(family, 'eventref'):
+        event = events.find("mx:event[@handle='%s']" % handle, ns)
+        type = event.find("mx:type", ns).text
+        if type in ('Marriage', 'Divorce'):  #What about Residence?
+            marriages.append(handleEvent(event, type))
+    rec['marriages'] = marriages
     for handle in getHandles(family, 'childref'):
         person = persons.find("mx:person[@handle='%s']" % handle, ns)
         rec['children'].append(gedId2Id[person.attrib['id']])
@@ -219,33 +278,3 @@ if TEST:
     print(r)
     r = dbAPI.get_record(famTestId)
     print(r)
-#Documentation
-"""
-Record structure:
-{
-'type': 'Family',
-'id': 'c8f0c0f1-3c90-4407-aeba-e98d720bcf67',
-'version': '1525542247418',
-'author': 'xxx',
-'gedId': 'F0015',
-'father': '48ed6b16-a92d-4ca7-8217-f4494528fd6c',
-'mother': '65c0352b-9cb7-498e-b69d-e4ec351dac73',
-'children': ['76d0b33c-d730-4fb2-8686-e0924128972f', ...]
-}
-{
-'type': 'Individual',
-'id': 'c2996fd9-830f-43ce-ba82-27ff637230b0',
-'version': '1525542247741',
-'author': 'xxx',
-'gedId': 'I0028',
-'name': 'David Ekedahl',
-'Birth': '1878-11-28',
-'Death': '1965-04-11',
-'imageIds': [(1940, '9a66d841-62cc-45fe-8b7a-e9ea1959065a'), ...],
-   <Funkar inte just nu>
-'color': 'röd',
-'location': [{'from': 1878, 'long': '13.3259861111111', 'lat': '56.8922166666667'},
-{'from': 1946, 'to': 1965, 'long': '12.8464212', 'lat': '56.6768526'}]
-        <location> from, long, lat mandatory; to optional
-}
-"""

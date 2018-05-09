@@ -7,8 +7,6 @@ class dbImport:
         if not auth: raise Exception("No user data provided")
         path = "%s/%s/users/login/password" % (serverUrl, prefix)
         self.url = "%s/%s" % (serverUrl, prefix)
-        r = requests.post(path, data = json_dumps(auth),
-                         headers = {"Content-Type": "application/json"})
         r = requests.post(path, json = auth)
         assert r.status_code == 200
         self.auth = r.json()['token']
@@ -28,11 +26,21 @@ class dbImport:
         assert r.status_code == 200
         return r.json()['id']
 
+    def crop_image(self, id, x1, y1, x2, y2):
+        path = "%s/images/%s/crop" % (self.url, id)
+        print("Crop %s; %s; %d,%d,%d,%d" % (path, id, x1, y1, x2, y2))
+        r = requests.post(path, json = {"left": x1, "lower": y1, "right": x2, "upper": y2},
+                          headers=self.authHeader)
+        print(r.text)
+        assert r.status_code == 200
+        return r.json()['id']
+
     def get_records(self):
         path = "%s/records" % (self.url)
         r = requests.get(path, headers=self.authHeader)
         assert r.status_code == 200
         return r
+
     def get_record(self, id):
         path = "%s/records/%s" % (self.url, id)
         r = requests.get(path, headers=self.authHeader)
