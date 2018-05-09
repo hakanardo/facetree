@@ -343,10 +343,33 @@ definitions:
   Event:
     type: object
     properties:
+      eventType:
+        description: One of 'Birth', 'Residence', 'Death', 'Burial'
+        type: string
       date:
         type: string
       place:
         type: string
+      from:
+        description: Year - start of event
+        type: integer
+      to:
+        description: Year - end of event - if range
+        type: integer
+      lat:
+        description: Geocoordinate latitude of place
+        type: number
+      long:
+        description: Geocoordinate longitude of place
+        type: number
+
+  ImageObj:
+    type: array
+    items:
+      - type: string
+        description: Date image was taken
+      - type: string
+        description: Id of Image object
 
   Record:
     type: object
@@ -377,11 +400,21 @@ definitions:
             type: string
           name:
             type: string
+          gedId:
+            description: Gramps id
+            type: string
+          color:
+            description: Branch of Petri
+            type: string
           birth:
             $ref: "#/definitions/Event"
           death:
             $ref: "#/definitions/Event"
-          marriages:
+          imageIds:
+            type: array
+            items:
+              - $ref: '#/definitions/ImageObj'
+          location:
             type: array
             items:
               - $ref: '#/definitions/Event'
