@@ -14,6 +14,7 @@ import random
 from utils import send_mail
 
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 
 ##################################################################################
 #  Indexes
