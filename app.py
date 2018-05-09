@@ -173,7 +173,7 @@ def get_record_updates(since):
 ##################################################################################
 
 def post_image(image):
-    if len(image) == 0:
+    if not isinstance(image, Image.Image) and len(image) == 0:
         return "No image provided.", 400
     id = str(uuid4())
     dn = "db/images/%s" % id

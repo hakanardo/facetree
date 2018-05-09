@@ -225,6 +225,10 @@ class TestAPI(Base):
         assert r.status_code == 200
         assert r.data == b'Good'
 
+    def test_post_bad_image(self):
+        r = self.post("/v1/images", b'', json=False)
+        assert r.status_code == 400
+
     def test_rescale_image(self):
         r = self.get("/v1/images/82fa2364-ed5f-4c9f-99d2-497f347d2f9b/thumb.jpg")
         assert r.status_code == 200
