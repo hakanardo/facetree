@@ -1,4 +1,5 @@
 import shelve
+from io import BytesIO
 from threading import Condition
 from time import time
 from uuid import uuid4
@@ -173,8 +174,13 @@ def get_record_updates(since):
 ##################################################################################
 
 def post_image(image):
-    if len(image) == 0:
-        return "No image provided.", 400
+    if not isinstance(image, Image.Image):
+        if len(image) == 0:
+            return "No (or empty) image provided.", 400
+        try:
+            Image.open(BytesIO(image))
+        except OSError:
+            return "Image format not recogniced.", 400
     id = str(uuid4())
     dn = "db/images/%s" % id
     if os.path.exists(dn):
