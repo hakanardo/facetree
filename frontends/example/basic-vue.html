@@ -1,0 +1,58 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Login example</title>
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <form v-if="mode=='Login'">
+            <label for="uname"><b>Username</b></label>
+            <input v-model="username" type="text" placeholder="Enter Username" name="uname" required>
+
+            <label for="psw"><b>Password</b></label>
+            <input v-model="password" type="password" placeholder="Enter Password" name="psw" required>
+
+            <button v-on:click="login($event)">Login</button>
+        </form>
+    </div>
+
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        username: "",
+        password: "",
+        mode: "Login"
+
+    },
+    methods: {
+        login: function (event) {
+            console.log(this.$http);
+            axios.post(facetree_backend + "/v1/users/login/password", {
+                "email": this.username,
+                "password": this.password
+            }).then((response) => {
+                this.auth_token = response.data.token;
+                this.mode = "Tree";
+            }).catch( (error) => {
+                console.log(error);
+            });
+
+            event.preventDefault();
+        }
+    }
+})
+</script>
+</body>
+</html>
