@@ -3,7 +3,7 @@ Getting started
 
 * Clone the repo:
 
-.. code-bock:: bash
+.. code-block:: bash
 
     git clone git@github.com:facetree/facetree.git
 
