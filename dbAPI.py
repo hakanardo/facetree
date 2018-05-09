@@ -28,10 +28,8 @@ class dbImport:
 
     def crop_image(self, id, x1, y1, x2, y2):
         path = "%s/images/%s/crop" % (self.url, id)
-        print("Crop %s; %s; %d,%d,%d,%d" % (path, id, x1, y1, x2, y2))
         r = requests.post(path, json = {"left": x1, "lower": y1, "right": x2, "upper": y2},
                           headers=self.authHeader)
-        print(r.text)
         assert r.status_code == 200
         return r.json()['id']
 

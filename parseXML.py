@@ -43,15 +43,9 @@ def handleEvent(ev, type):
     loc = {'eventType': type, 'from': 0}
     try:
         dat = ev.find("mx:dateval", ns).attrib['val']
+        loc['date'] = dat
         d = dateToInt(dat)
         loc['from'] = d
-        if type in ('Birth', 'Death'):
-            try:
-                rec[type] = dat
-            except:
-                try:
-                    rec[type] = dat
-                except: pass
     except: pass
     for field in ("mx:daterange", "mx:datespan"):
         try:
@@ -64,6 +58,11 @@ def handleEvent(ev, type):
     try:
         handle = place.attrib['hlink']
         placeobj = places.find("mx:placeobj[@handle='%s']" % handle, ns)
+        try:
+            loc['place'] = placeobj.find("mx:ptitle", ns).text
+        except:
+            pass
+
         coord = placeobj.find("mx:coord", ns)
         loc['long'] = coord.attrib['long']
         loc['lat'] = coord.attrib['lat']
@@ -131,7 +130,10 @@ for person in persons.findall("mx:person", ns):
         ev = events.find("mx:event[@handle='%s']" % handle, ns)
         type = ev.find("mx:type", ns).text
         if type in ('Birth', 'Residence', 'Death', 'Burial'): #CHR?
-            locs.append(handleEvent(ev, type))
+            evDict = handleEvent(ev, type)
+            locs.append(evDict)
+            if type in ('Birth', 'Death'):
+                rec[type.lower()] = evDict
     #tags
     for handle in getHandles(person, 'tagref'):
         tagobj = tags.find("mx:tag[@handle='%s']" % handle, ns)
