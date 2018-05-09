@@ -3,13 +3,13 @@ Getting started
 
 * Clone the repo:
 
-.. :code: bash
+.. code-bock:: bash
 
     git clone git@github.com:facetree/facetree.git
 
 * Choose which backend to use by copying the template and edit it:
 
-.. :code: bash
+.. code-block:: bash
 
     cp frontends/backend_name.js.example  frontends/backend_name.js
 
