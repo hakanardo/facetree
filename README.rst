@@ -142,6 +142,9 @@ Getting started
 
         git checkout -b my-cool-frontend
 
+* Decide what feature of the app you want to focus on and add your names to it on the wiki on github. If none of
+  the suggestions there suits you, feel free to add points.
+
 * Create a directory under frontends for your frontend and stat building it.
 
     .. code-block:: bash
