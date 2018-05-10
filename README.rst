@@ -64,7 +64,7 @@ and a Family entry connects a set of Individual entreies by refereing to their i
     }
 
 Using the backend it is then possible to donwload these entries. Either one by one or all at once. There is
-also a longpoll endpoint to get updates after a full download has been performed. And it is possible to
+also a longpoll (??) endpoint to get updates after a full download has been performed. And it is possible to
 download historic version of the entries. The details of the API is described in swagger.yaml from which
 docs are generated here:
 
@@ -77,7 +77,7 @@ There are two backends up and running. One development version at
 where you can play around with the data as much as you like to test the functionality of your frontend. And one
 production server at
 
-    https://facetree-dev.ardoe.net/
+    https://facetree.ardoe.net/
 
 where we care about the data and are actively collecting images.
 
@@ -95,6 +95,7 @@ Getting started
 
     .. code-block:: bash
 
+        cd facetree
         cp frontends/backend_name.js.example  frontends/backend_name.js
 
 * Install and start a webserver serving the frontends diretocy as it's root. It can be done either with python:
@@ -112,11 +113,10 @@ Getting started
         npm install -g serve
         serve frontends/
 
-
 * In, frontends/examples/ copy login.html to tutorial.html and open it in your browser through the
   webserver: (http://localhost:5000/example/tutorial.html)
 
-* Open the javascript consol and note that it was not grated access.
+* Open the javascript consol and note that it was not granted access.
 
 * Update tutorial.html with the credentials of your test user and verify using the javascript console that the login is
   successfull.
@@ -130,7 +130,7 @@ Getting started
 
 * Start the database downloader after a successfull login (replacing the line that says "// HERE"). This will download all the records and then use the long
   poll. It needs two parameters, the auth_token from the login response and a callback (optional) that will be called when
-  updates are made to the databse.
+  updates are made to the database. ??Where to put this code??
 
     .. code-block:: javascript
 
