@@ -70,6 +70,17 @@ docs are generated here:
 
     https://facetree-dev.ardoe.net/v1/ui/#/default
 
+There are two backends up and running. One development version at
+
+    https://facetree-dev.ardoe.net/
+
+where you can play around with the data as much as you like to test the functionality of your frontend. And one
+production server at
+
+    https://facetree-dev.ardoe.net/
+
+where we care about the data and are actively collecting images.
+
 
 Getting started
 ===============
@@ -103,8 +114,64 @@ Getting started
 
 * Open the javascript consol and note that it was not grated access.
 
-* Update tutorial.html with the credentials of your test user.
+* Update tutorial.html with the credentials of your test user and verify using the javascript console that the login is
+  successfull.
+
+* Now we need to get the tree data. Look in database.html if the following instructions are unclear. Add the backend
+  lib to the head section of tutorial.html:
+
+    .. code-block:: html
+
+        <script src="../facetree.js"></script>
+
+* Start the database downloader after a successfull login. This will download all the records and then use the long
+  poll. It needs two parameters, the auth_token from the login response and a callback (optional) that will be called when
+  updates are made to the databse.
+
+    .. code-block:: javascript
+
+        start_database_updater(response.data.token, function (updated_records) {
+            for (var id in database.individuals) {
+                console.log(database.individuals[id].name);
+            }
+        });
+
+* Create a branch for your frontend:
+
+    .. code-block:: bash
+
+        git checkout -b my-cool-frontend
 
 * Create a directory under frontends for your frontend and stat building it.
 
+    .. code-block:: bash
 
+        mkdir frontends/my-cool-frontend
+        git add frontends/my-cool-frontend
+        git commit -a -m "Nice fix"
+        git push
+
+* If you want, copy example/basic-vue.html to your directory and use it as a staring point for your frontend.
+
+* Add a link to your frontend in frontends/index.html
+
+* When you need to share your changes with the rest of the group, merge your branch to the develop branch (default)
+  and push the chnages. That will also
+  make your frontend availible at https://facetree-dev.ardoe.net/ after a minute or so,
+
+    .. code-block:: bash
+
+        git checkout develop
+        git merge my-cool-frontend
+        git push
+        git checkout my-cool-frontend
+
+* When you have something to show the world, merge your branch to the master branch. That will also
+  make your frontend availible at https://facetree.ardoe.net/ after a minute or so
+
+    .. code-block:: bash
+
+        git checkout master
+        git merge my-cool-frontend
+        git push
+        git checkout my-cool-frontend
