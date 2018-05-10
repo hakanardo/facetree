@@ -35,14 +35,27 @@
             <a v-on:click="curent_individual=childin(curent_individual)[0].father" v-if="childin(curent_individual)[0].father" href="#">Up</a>
             <div v-for="family in parentin(curent_individual)">
                 <dl>
-                    <dt>{{ individual(family.father).name }} {{ individual(family.mother).name }}</dt>
+                    <dt>
+                        <a v-on:click="show_individual(family.father)" href="#">{{ individual(family.father).name }}</a>
+                        <a v-on:click="show_individual(family.mother)" href="#">{{ individual(family.mother).name }}</a>
+                    </dt>
                     <dd v-for="id in family.children">
-                        {{ individual(id).name }}
+                        <a v-on:click="show_individual(id)" href="#">{{ individual(id).name }}</a>
+                        ({{ individual(id).color }})
+                        <span v-if="individual(id).imageIds.length>0">*</span>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-on:click="curent_individual=id" href="#">Down</a>
                     </dd>
                 </dl>
             </div>
         </div>
+
+        <div v-if="mode=='Individual'">
+            <H1>{{ individual(curent_individual).name }}</H1>
+            <img v-if="image.length>0" v-bind:src="image"><br>
+            <a v-on:click="mode='Tree'" href="#">Tree</a>
+        </div>
+
     </div>
 
 <script>
@@ -53,6 +66,7 @@ var app = new Vue({
         password: "",
         mode: "Login",
         curent_individual: undefined,
+        image: "",
     },
     methods: {
         login: function (event) {
@@ -100,6 +114,23 @@ var app = new Vue({
 
         individual: function(id) {
             return database.individuals[id];
+        },
+
+        show_individual: function (id) {
+            this.image = '';
+            this.curent_individual = id;
+            this.mode = 'Individual';
+            if (database.individuals[id].imageIds && database.individuals[id].imageIds.length > 0) {
+                var imgid = database.individuals[id].imageIds[0][1];
+                axios.get(facetree_backend + "/v1/images/" + imgid + "/full.jpg/base64", {"headers": auth_headers})
+                .then((response) => {
+                    this.image = 'data:image/jpeg;base64,' + response.data;
+                })
+                .catch(function (error) {
+                    console.log("Image download failed");
+                    console.log(error);
+                });
+            }
         }
     }
 })
