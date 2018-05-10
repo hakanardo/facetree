@@ -64,7 +64,8 @@ and a Family entry connects a set of Individual entreies by refereing to their i
     }
 
 Using the backend it is then possible to donwload these entries. Either one by one or all at once. There is
-also a longpoll (??) endpoint to get updates after a full download has been performed. And it is possible to
+also a longpoll (see https://www.pubnub.com/blog/2014-12-01-http-long-polling/)
+endpoint to get updates after a full download has been performed. And it is possible to
 download historic version of the entries. The details of the API is described in swagger.yaml from which
 docs are generated here:
 
@@ -130,7 +131,7 @@ Getting started
 
 * Start the database downloader after a successfull login (replacing the line that says "// HERE"). This will download all the records and then use the long
   poll. It needs two parameters, the auth_token from the login response and a callback (optional) that will be called when
-  updates are made to the database. ??Where to put this code??
+  updates are made to the database.
 
     .. code-block:: javascript
 
