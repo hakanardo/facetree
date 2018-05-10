@@ -80,11 +80,25 @@ Getting started
 
         git clone git@github.com:facetree/facetree.git
 
-* Choose which backend to use by copying the template and edit it:
+* Choose which backend to use by copying the template and edit it. The default should be fine in most cases:
 
     .. code-block:: bash
 
         cp frontends/backend_name.js.example  frontends/backend_name.js
+
+* Install a webserver, for example:
+
+    .. code-block:: bash
+
+        npm install -g serve
+
+* Start the webserver and have it serve the frontends diretocy as it's root:
+
+    .. code-block:: bash
+
+        serve frontends/
+
+* Open a browser to the newly started webserver (http://localhost:5000/example/)
 
 * Look at the examples in frontends/example/ by opening the files in a browser and looking in the console
 
