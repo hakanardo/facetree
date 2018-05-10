@@ -1,3 +1,4 @@
+import base64
 import unittest
 from threading import Thread
 from uuid import uuid4
@@ -225,6 +226,9 @@ class TestAPI(Base):
         r = self.get("/v1/images/%s/original.jpg" % id)
         assert r.status_code == 200
         assert r.data == jpeg_data
+        r = self.get("/v1/images/%s/original.jpg/base64" % id)
+        assert r.status_code == 200
+        assert base64.decodebytes(r.data) == jpeg_data
 
     def test_post_bad_image(self):
         r = self.post("/v1/images", b'', json=False)

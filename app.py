@@ -1,3 +1,4 @@
+import base64
 import shelve
 from io import BytesIO
 from threading import Condition
@@ -213,6 +214,10 @@ def get_image(id, width):
         img.save(fn)
     with open(fn, "rb") as fd:
         return fd.read()
+
+def get_image_base64(id, width):
+    img = get_image(id, width)
+    return base64.encodebytes(img)
 
 
 
