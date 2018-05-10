@@ -119,7 +119,7 @@ def post_record(user, record):
         record['id'] = str(uuid4())
     if 'version' in record:
         record['prev_version'] = record['version']
-    record['author'] = user['individual']
+    record['author'] = user['email']
     update_indexes(record)
     key = record['version'] + ':' + record['id']
     records[key] = record
