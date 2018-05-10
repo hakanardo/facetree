@@ -50,7 +50,7 @@ and a Family entry connects a set of Individual entreies by refereing to their i
 .. code-block:: json
 
     {
-      "author": "",
+      "author": "user@example.com",
       "children": [
         "c4e4f73c-38b5-4ce2-96e5-23804522f309"
       ],
@@ -68,7 +68,7 @@ also a longpoll endpoint to get updates after a full download has been performed
 download historic version of the entries. The details of the API is described in swagger.yaml from which
 docs are generated here:
 
-    https://facetree.ardoe.net/v1/ui/#/default
+    https://facetree-dev.ardoe.net/v1/ui/#/default
 
 
 Getting started
