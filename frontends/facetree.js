@@ -19,6 +19,9 @@ function database_add_records(records) {
             if (!database.individuals[rec.id] || database.individuals[rec.id].version < rec.version) {
                 database.individuals[rec.id] = rec;
             }
+            if (rec.root) {
+                database.root = rec;
+            }
         } else if (rec.type == 'Family') {
             old_rec = database.families[rec.id];
             if (!old_rec || database.families[rec.id].version < rec.version) {

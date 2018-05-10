@@ -4,14 +4,15 @@
 <head>
   <meta charset="utf-8">
 
-  <title>Login example</title>
+  <title>Baisc Vue example</title>
 
   <!--[if lt IE 9]>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
   <![endif]-->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="../backend_name.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="../facetree.js"></script>
 </head>
 
 <body>
@@ -25,6 +26,23 @@
 
             <button v-on:click="login($event)">Login</button>
         </form>
+
+        <div v-if="mode=='Loading'">
+            Loading...
+        </div>
+
+        <div v-if="mode=='Tree'">
+            <a v-on:click="curent_individual=childin(curent_individual)[0].father" v-if="childin(curent_individual)[0].father" href="#">Up</a>
+            <div v-for="family in parentin(curent_individual)">
+                <dl>
+                    <dt>{{ individual(family.father).name }} {{ individual(family.mother).name }}</dt>
+                    <dd v-for="id in family.children">
+                        {{ individual(id).name }}
+                        <a v-on:click="curent_individual=id" href="#">Down</a>
+                    </dd>
+                </dl>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -33,23 +51,55 @@ var app = new Vue({
     data: {
         username: "",
         password: "",
-        mode: "Login"
-
+        mode: "Login",
+        curent_individual: undefined,
     },
     methods: {
         login: function (event) {
-            console.log(this.$http);
             axios.post(facetree_backend + "/v1/users/login/password", {
                 "email": this.username,
                 "password": this.password
             }).then((response) => {
-                this.auth_token = response.data.token;
-                this.mode = "Tree";
+                this.mode = "Loading";
+                start_database_updater(response.data.token, (updated_records) => {
+                    this.mode = "Tree";
+                    this.curent_individual = database.root.id;
+                });
             }).catch( (error) => {
                 console.log(error);
             });
 
             event.preventDefault();
+        },
+
+        parentin: function(id) {
+            var families = [];
+            if (!database.parentin[id]) {
+                return [];
+            }
+            var plist = Array.from(database.parentin[id]);
+            for (var i in plist) {
+                fid = plist[i];
+                families.push(database.families[fid]);
+            }
+            return families;
+        },
+
+        childin: function(id) {
+            var families = [];
+            if (!database.childin[id]) {
+                return [];
+            }
+            var plist = Array.from(database.childin[id]);
+            for (var i in plist) {
+                fid = plist[i];
+                families.push(database.families[fid]);
+            }
+            return families;
+        },
+
+        individual: function(id) {
+            return database.individuals[id];
         }
     }
 })
