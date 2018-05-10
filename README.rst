@@ -141,6 +141,26 @@ Getting started
             }
         });
 
+* That should give you a list of all the indiviuals in the database in the javascript console. To instead show their
+  picures, replace the console.log call with
+
+    .. code-block:: javascript
+
+        if (database.individuals[id].imageIds && database.individuals[id].imageIds.length > 0) {
+            var imgid = database.individuals[id].imageIds[0][1];
+            axios.get(facetree_backend + "/v1/images/" + imgid + "/thumb.jpg/base64", {"headers": auth_headers})
+            .then(function (response) {
+                var outputImg = document.createElement('img');
+                outputImg.src = 'data:image/jpeg;base64,' + response.data;
+                document.body.appendChild(outputImg);
+            })
+            .catch(function (error) {
+                console.log("Image download failed");
+                console.log(error);
+            });
+        }
+
+
 * Create a branch for your frontend:
 
     .. code-block:: bash
