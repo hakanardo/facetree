@@ -97,17 +97,21 @@ Getting started
 
         cp frontends/backend_name.js.example  frontends/backend_name.js
 
-* Install a webserver, for example:
+* Install and start a webserver serving the frontends diretocy as it's root. It can be done either with python:
+
+    .. code-block:: bash
+
+        apt-get install python3
+        cd frontends
+        python3 -m http.server 5000
+
+    or with npm:
 
     .. code-block:: bash
 
         npm install -g serve
-
-* Start the webserver and have it serve the frontends diretocy as it's root:
-
-    .. code-block:: bash
-
         serve frontends/
+
 
 * In, frontends/examples/ copy login.html to tutorial.html and open it in your browser through the
   webserver: (http://localhost:5000/example/tutorial.html)
@@ -124,7 +128,7 @@ Getting started
 
         <script src="../facetree.js"></script>
 
-* Start the database downloader after a successfull login. This will download all the records and then use the long
+* Start the database downloader after a successfull login (replacing the line that says "// HERE"). This will download all the records and then use the long
   poll. It needs two parameters, the auth_token from the login response and a callback (optional) that will be called when
   updates are made to the databse.
 
