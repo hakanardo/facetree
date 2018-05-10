@@ -98,9 +98,13 @@ Getting started
 
         serve frontends/
 
-* Open a browser to the newly started webserver (http://localhost:5000/example/)
+* In, frontends/examples/ copy login.html to tutorial.html and open it in your browser through the
+  webserver: (http://localhost:5000/example/tutorial.html)
 
-* Look at the examples in frontends/example/ by opening the files in a browser and looking in the console
+* Open the javascript consol and note that it was not grated access.
 
-* Create a directory under frontends for your frontend
+* Update tutorial.html with the credentials of your test user.
+
+* Create a directory under frontends for your frontend and stat building it.
+
 
