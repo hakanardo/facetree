@@ -5,6 +5,35 @@ var colLookUp = {'blå': 'blue', 'grön': 'green', 'gul': 'yellow', 'röd': 'red
 var draw;
 var endDate = 1950;
 
+function showTooltip(evt, text, imgid) {
+    let tooltip = document.getElementById("tooltip");
+    tooltip.innerHTML = '';
+    var image='';
+    if (imgid) {
+        axios.get(facetree_backend + "/v1/images/" + imgid + "/thumb.jpg/base64",
+                  {"headers": auth_headers})
+            .then((response) => {
+                image = 'data:image/jpeg;base64,' + response.data;
+                var info = '<img src="'+image+'"/>';
+                tooltip.innerHTML = info + "<br>" + text;
+            })
+            .catch(function (error) {
+                console.log("Image download failed");
+                console.log(error);
+            });
+    } else {
+        tooltip.innerHTML = text;
+    }
+  tooltip.style.display = "block";
+  tooltip.style.left = evt.pageX + 10 + 'px';
+  tooltip.style.top = evt.pageY + 10 + 'px';
+}
+
+function hideTooltip() {
+  var tooltip = document.getElementById("tooltip");
+  tooltip.style.display = "none";
+}
+
 function individual(id) {
     return database.individuals[id];
 };
@@ -48,10 +77,10 @@ function pol2cart(R, alpha) {
 }
 
 function popupTxt(rec) {
-    var txt = rec.name; //PersonRecs[id]['name'] + "\n";
+    var txt = rec.name + "<br>";
     //txt += id+' ';
-    txt += rec.birth.from + ' - '; //PersonRecs[id]['birth']['from'] + ' - ';
-    try { txt += rec.death.from; } //PersonRecs[id]['death']['from']; }
+    txt += rec.birth.from + ' - ';
+    try { txt += rec.death.from; }
     catch(err) {;}
     return txt;
 }
@@ -63,16 +92,18 @@ function personSVG(ind) {
     var distRing = (gen+1) * distanceGen - distanceGen/2.0;
     var ppos, pos, pos1, pos2, color;
     if (gen == 1) {
-        //draw.text('Petri ' + endDate.toString()).attr({x: 0, y: 20, fill: 'black'}).font({family: 'Helvetica', size: 20});
         ppos = translate(0, 0);
         draw.text('Petri släktträd').attr({x: ppos.x-distanceGen,
                                              y: ppos.y-distanceGen/2.0, fill: 'black'}).font({family: 'Helvetica', size: 20});
         draw.text(endDate.toString()).attr({x: ppos.x-distanceGen/2.0,
                                             y: ppos.y+distanceGen/2.0, fill: 'black'}).font({family: 'Helvetica', size: 20});
         var pp = draw.group();
-        pp.add(draw.element('title').words(popupTxt(ind)));
+        //pp.add(draw.element('title').words(popupTxt(ind)));
         //pp.add(draw.text(pid).attr({x: ppos.x, y: ppos.y, fill: 'grey'}));
-        pp.add(draw.circle(10).attr({cx: ppos.x, cy: ppos.y, stroke: 'grey', fill: 'grey'}));
+        var txt = popupTxt(ind);
+        pp.add(draw.circle(10).attr({cx: ppos.x, cy: ppos.y, stroke: 'grey', fill: 'grey',
+                                     onmousemove: "showTooltip(evt, '"+txt+"', '');",
+                                     onmouseout: "hideTooltip();"}));
     } else {
         ppos = pol2cart(gen * distanceGen, ind.alpha); //PersonRecs[pid]['alpha']);
     }
@@ -96,8 +127,13 @@ function personSVG(ind) {
             if (typeof color == 'undefined') { color = 'black'; }
             pos = pol2cart((gen+1) * distanceGen, child.alpha);
             var pers = draw.group();
-            pers.add(draw.element('title').words(popupTxt(child)));
-            pers.add(draw.circle(10).attr({cx: pos.x, cy: pos.y, stroke: color, fill: color}));
+            //pers.add(draw.element('title').words(popupTxt(child)));
+            var txt = popupTxt(child);
+            try {var img = child.imageIds[0][1];}
+            catch (err) { var img='';}
+            pers.add(draw.circle(10).attr({cx: pos.x, cy: pos.y, stroke: color, fill: color,
+                                           onmousemove: "showTooltip(evt, '"+txt+"', '"+img+"');",
+                                           onmouseout: "hideTooltip();"}));
             pos1 = pol2cart(distRing, ind.alpha);
             pos2 = pol2cart(distRing, child.alpha);
             draw.line(ppos.x, ppos.y, pos1.x, pos1.y).attr({stroke: color});

@@ -34,6 +34,8 @@
         </div>
 
         <div v-if="mode=='Tree'" onload="drawTree()">
+            <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
         <div id="petriTree"></div>
         <div>
           <input id="year" type="range" value="1950" min="1798" max="2018" class="fullwidth"
