@@ -1,0 +1,151 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Petri circular tree</title>
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+    <script src="../facetree.js"></script>
+    <script type="text/javascript" src="svg.min.js"></script>
+    <script type="text/javascript" src="svg.panzoom.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <form v-if="mode=='Login'">
+            <label for="uname"><b>Username</b></label>
+            <input v-model="username" type="text" placeholder="Enter Username" name="uname" required>
+
+            <label for="psw"><b>Password</b></label>
+            <input v-model="password" type="password" placeholder="Enter Password" name="psw" required>
+
+            <button v-on:click="login($event)">Login</button>
+        </form>
+
+        <div v-if="mode=='Loading'">
+            Loading...
+        </div>
+
+        <div v-if="mode=='Tree'" onload="drawTree()">
+        <div id="petriTree"></div>
+        <div>
+          <input id="year" type="range" value="1950" min="1798" max="2018" class="fullwidth"
+               onchange="drawTree()" oninput="drawTree()"/>
+          <input id="yearbox" type="text" size="4" value="1950"/>
+          <input type="button" value="Play" onclick="animate_tree()" />
+        </div>
+
+        </div>
+
+        <div v-if="mode=='Individual'">
+          <H1>{{ individual(curent_individual).name }}</H1>
+            <img v-if="image.length>0" v-bind:src="image" height="400"><br>
+	          <img v-for="idA in individual(curent_individual).imageIds" v-bind:src="get_thumb(idA)">
+            <a v-on:click="mode='Tree'" href="#">Tree</a>
+        </div>
+
+    </div>
+
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        username: "",
+        password: "",
+        mode: "Login",
+        curent_individual: undefined,
+        image: "",
+        thumb: "",
+    },
+    methods: {
+        login: function (event) {
+            axios.post(facetree_backend + "/v1/users/login/password", {
+                "email": this.username,
+                "password": this.password
+            }).then((response) => {
+                this.mode = "Loading";
+                start_database_updater(response.data.token, (updated_records) => {
+                    this.mode = "Tree";
+                    this.curent_individual = database.root.id;
+                });
+            }).catch( (error) => {
+                console.log(error);
+            });
+
+            event.preventDefault();
+        },
+
+        parentin: function(id) {
+            var families = [];
+            if (!database.parentin[id]) {
+                return [];
+            }
+            var plist = Array.from(database.parentin[id]);
+            for (var i in plist) {
+                fid = plist[i];
+                families.push(database.families[fid]);
+            }
+            return families;
+        },
+
+        childin: function(id) {
+            var families = [];
+            if (!database.childin[id]) {
+                return [];
+            }
+            var plist = Array.from(database.childin[id]);
+            for (var i in plist) {
+                fid = plist[i];
+                families.push(database.families[fid]);
+            }
+            return families;
+        },
+
+        individual: function(id) {
+            return database.individuals[id];
+        },
+
+        show_individual: function (id) {
+            this.image = '';
+            this.curent_individual = id;
+            this.mode = 'Individual';
+            if (database.individuals[id].imageIds && database.individuals[id].imageIds.length > 0) {
+                var imgid = database.individuals[id].imageIds[0][1];
+                console.log('1 ' + imgid)
+                axios.get(facetree_backend + "/v1/images/" + imgid + "/full.jpg/base64", {"headers": auth_headers})
+                .then((response) => {
+                    this.image = 'data:image/jpeg;base64,' + response.data;
+                })
+                .catch(function (error) {
+                    console.log("Image download failed");
+                    console.log(error);
+                });
+            }
+        },
+
+        get_thumb: function (imgid) {
+            var im = '';
+            var request = new XMLHttpRequest();
+            var url = facetree_backend + "/v1/images/" + String(imgid).substring(1) + "/thumb.jpg/base64"
+            request.open("GET", url, false);
+            request.setRequestHeader("Authorization", auth_headers["Authorization"])
+            request.send(null);
+            if (request.status === 200) {
+               im = 'data:image/jpeg;base64,' + request.responseText;
+            }
+            return im;
+        }
+    }
+})
+
+</script>
+<script type="text/javascript" src="circularTree.js"></script>
+</body>
+</html>

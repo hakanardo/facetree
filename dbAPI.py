@@ -58,5 +58,11 @@ class dbImport:
         assert r.status_code == 200
         return r.json()
 
+    def delete_record(self, id):
+        path = "%s/records/%s" % (self.url, id)
+        r = requests.delete(path, headers=self.authHeader)
+        assert r.status_code == 200
+        return
+
 
 # print(dbImport(auth={"email": "hakan@debian.org", "password": "7tsLKBZo"}).save_image(open("junk/hakan.jpg", "br").read()))
