@@ -5,33 +5,39 @@ var colLookUp = {'blå': 'blue', 'grön': 'green', 'gul': 'yellow', 'röd': 'red
 var draw;
 var endDate = 1950;
 
-function showTooltip(evt, text, imgid) {
-    let tooltip = document.getElementById("tooltip");
-    tooltip.innerHTML = '';
+function showPopupimage(evt, text, imgid) {
+    let popuptext = document.getElementById("popuptext");
+    popuptext.innerHTML = text;
+    popuptext.style.display = "block";
+    popuptext.style.left = evt.pageX + 10 + 'px';
+    popuptext.style.top = evt.pageY - 25 + 'px';
+
+    let popupimage = document.getElementById("popupimage");
+    popupimage.innerHTML = '';
     var image='';
     if (imgid) {
         axios.get(facetree_backend + "/v1/images/" + imgid + "/thumb.jpg/base64",
                   {"headers": auth_headers})
             .then((response) => {
-                image = 'data:image/jpeg;base64,' + response.data;
-                var info = '<img src="'+image+'"/>';
-                tooltip.innerHTML = info + "<br>" + text;
+                //image = 'data:image/jpeg;base64,' + response.data;
+                //var info = '<img src="'+image+'"/>';
+                popupimage.innerHTML = '<img src="data:image/jpeg;base64,'+response.data+'"/>';
             })
             .catch(function (error) {
                 console.log("Image download failed");
                 console.log(error);
             });
-    } else {
-        tooltip.innerHTML = text;
     }
-  tooltip.style.display = "block";
-  tooltip.style.left = evt.pageX + 10 + 'px';
-  tooltip.style.top = evt.pageY + 10 + 'px';
+    popupimage.style.display = "block";
+    popupimage.style.left = evt.pageX + 10 + 'px';
+    popupimage.style.top = evt.pageY + 10 + 'px';
 }
 
-function hideTooltip() {
-  var tooltip = document.getElementById("tooltip");
-  tooltip.style.display = "none";
+function hidePopupimage() {
+    var popupimage = document.getElementById("popupimage");
+    popupimage.style.display = "none";
+    var popuptext = document.getElementById("popuptext");
+    popuptext.style.display = "none";
 }
 
 function individual(id) {
@@ -96,14 +102,14 @@ function personSVG(ind) {
         draw.text('Petri släktträd').attr({x: ppos.x-distanceGen,
                                              y: ppos.y-distanceGen/2.0, fill: 'black'}).font({family: 'Helvetica', size: 20});
         draw.text(endDate.toString()).attr({x: ppos.x-distanceGen/2.0,
-                                            y: ppos.y+distanceGen/2.0, fill: 'black'}).font({family: 'Helvetica', size: 20});
+                                            y: ppos.y+distanceGen/4.0, fill: 'black'}).font({family: 'Helvetica', size: 20});
         var pp = draw.group();
         //pp.add(draw.element('title').words(popupTxt(ind)));
         //pp.add(draw.text(pid).attr({x: ppos.x, y: ppos.y, fill: 'grey'}));
         var txt = popupTxt(ind);
         pp.add(draw.circle(10).attr({cx: ppos.x, cy: ppos.y, stroke: 'grey', fill: 'grey',
-                                     onmousemove: "showTooltip(evt, '"+txt+"', '');",
-                                     onmouseout: "hideTooltip();"}));
+                                     onmousemove: "showPopupimage(evt, '"+txt+"', '');",
+                                     onmouseout: "hidePopupimage();"}));
     } else {
         ppos = pol2cart(gen * distanceGen, ind.alpha); //PersonRecs[pid]['alpha']);
     }
@@ -132,8 +138,8 @@ function personSVG(ind) {
             try {var img = child.imageIds[0][1];}
             catch (err) { var img='';}
             pers.add(draw.circle(10).attr({cx: pos.x, cy: pos.y, stroke: color, fill: color,
-                                           onmousemove: "showTooltip(evt, '"+txt+"', '"+img+"');",
-                                           onmouseout: "hideTooltip();"}));
+                                           onmousemove: "showPopupimage(evt, '"+txt+"', '"+img+"');",
+                                           onmouseout: "hidePopupimage();"}));
             pos1 = pol2cart(distRing, ind.alpha);
             pos2 = pol2cart(distRing, child.alpha);
             draw.line(ppos.x, ppos.y, pos1.x, pos1.y).attr({stroke: color});
