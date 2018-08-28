@@ -1,0 +1,69 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+                <style type="text/css">
+                  html, body { height: 100%; margin: 0; padding: 0; }
+                  #map { height: 100%; }
+                </style>
+
+  <title>Database example</title>
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+    <script src="../facetree.js"></script>
+</head>
+
+<body>
+<script>
+
+    function initMap() {
+                      var myLatLng = {lat: 60, lng: 15};
+
+                      // Create a map object and specify the DOM element for display.
+                      map = new google.maps.Map(document.getElementById('map'), {
+                        center: myLatLng,
+                        zoom: 5
+                      });
+
+                  }
+
+
+    axios.post(facetree_backend + "/v1/users/login/password",{
+      "email": "MY_USERNAME",
+      "password": "MY_PASSWORD"
+    })
+    .then(function (response) {
+        start_database_updater(response.data.token, function (updated_records) {
+            for (var id in database.individuals) {
+                console.log(database.individuals[id].name);
+                if (database.individuals[id].location) {
+                loc_list = database.individuals[id].location[0];
+                long = parseFloat(loc_list['long']) + Math.random()*0.0001;
+                lat = parseFloat(loc_list['lat']) + Math.random()*0.0001;
+                console.log(long, lat);
+                pp18 = new google.maps.Marker({map: map, position: 
+                    {lat: lat, lng: long }
+                    ,
+                    title: database.individuals[id].name});
+                }
+            }
+        });
+    })
+    .catch(function (error) {
+        console.log("Login failed.")
+        console.log(error);
+    });
+
+</script>
+<div id="map"></div>
+                <script async defer
+                  src="https://maps.googleapis.com/maps/api/js?key=MY_GOOGLE_API_KEY&callback=initMap">
+                </script>
+
+</body>
+</html>
