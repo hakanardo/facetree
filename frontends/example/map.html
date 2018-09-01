@@ -33,13 +33,13 @@
                   }
 
     function login() {
-        document.getElementById('login').style.display="none";
-        document.getElementById('map').style.display="";
         axios.post(facetree_backend + "/v1/users/login/password", {
             "email": document.getElementById('username').value,
             "password": document.getElementById('password').value
         })
             .then(function (response) {
+                document.getElementById('login').style.display="none";
+                document.getElementById('map').style.display="";
                 start_database_updater(response.data.token, function (updated_records) {
                     for (var id in database.individuals) {
                         if (database.individuals[id].location) {
@@ -57,7 +57,7 @@
             })
 
             .catch(function (error) {
-                console.log("Login failed.")
+                alert("Login failed.");
                 console.log(error);
             });
     }
