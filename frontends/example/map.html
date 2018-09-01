@@ -29,41 +29,54 @@
                         center: myLatLng,
                         zoom: 5
                       });
-
+                      document.getElementById('login').style.display='';
                   }
 
+    function login() {
+        document.getElementById('login').style.display="none";
+        document.getElementById('map').style.display="";
+        axios.post(facetree_backend + "/v1/users/login/password", {
+            "email": document.getElementById('username').value,
+            "password": document.getElementById('password').value
+        })
+            .then(function (response) {
+                start_database_updater(response.data.token, function (updated_records) {
+                    for (var id in database.individuals) {
+                        if (database.individuals[id].location) {
+                            loc_list = database.individuals[id].location[0];
+                            long = parseFloat(loc_list['long']) + Math.random() * 0.0001;
+                            lat = parseFloat(loc_list['lat']) + Math.random() * 0.0001;
+                            pp18 = new google.maps.Marker({
+                                map: map, position: {lat: lat, lng: long}
+                                ,
+                                title: database.individuals[id].name
+                            });
+                        }
+                    }
+                });
+            })
 
-    axios.post(facetree_backend + "/v1/users/login/password",{
-      "email": "MY_USERNAME",
-      "password": "MY_PASSWORD"
-    })
-    .then(function (response) {
-        start_database_updater(response.data.token, function (updated_records) {
-            for (var id in database.individuals) {
-                console.log(database.individuals[id].name);
-                if (database.individuals[id].location) {
-                loc_list = database.individuals[id].location[0];
-                long = parseFloat(loc_list['long']) + Math.random()*0.0001;
-                lat = parseFloat(loc_list['lat']) + Math.random()*0.0001;
-                console.log(long, lat);
-                pp18 = new google.maps.Marker({map: map, position: 
-                    {lat: lat, lng: long }
-                    ,
-                    title: database.individuals[id].name});
-                }
-            }
-        });
-    })
-    .catch(function (error) {
-        console.log("Login failed.")
-        console.log(error);
-    });
+            .catch(function (error) {
+                console.log("Login failed.")
+                console.log(error);
+            });
+    }
 
 </script>
-<div id="map"></div>
-                <script async defer
-                  src="https://maps.googleapis.com/maps/api/js?key=MY_GOOGLE_API_KEY&callback=initMap">
-                </script>
+    <form id="login" style="display:none">
+        <label for="username"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" id="username" required>
+
+        <label for="password"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" id="password" required>
+
+        <button type="button" onclick="login()">Login</button>
+    </form>
+
+    <div id="map" style="display:none"></div>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap">
+    </script>
 
 </body>
 </html>
