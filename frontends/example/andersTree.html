@@ -80,6 +80,7 @@ var app = new Vue({
                     this.curent_individual = database.root.id;
                 });
             }).catch( (error) => {
+                alert("Login failed");
                 console.log(error);
             });
 
