@@ -40,6 +40,23 @@ function hidePopupimage() {
     popuptext.style.display = "none";
 }
 
+function bestImgId(pers, year) {
+    var imgId;
+    var yearTaken;
+    var minDist = 100;
+    try { imgId = pers.imageIds[0][1];}
+    catch (err) { imgId='';}
+    for(var i = 0; i < pers.imageIds.length; i++) {
+        try { yearTaken = parseInt(pers.imageIds[i][0]); }
+        catch(err) { yearTaken = 0; }
+        if ( Math.abs(year - yearTaken) < minDist) {
+            imgId = pers.imageIds[i][1];
+            minDist = Math.abs(year - yearTaken);
+        }
+    }
+    return imgId;
+}
+
 function individual(id) {
     return database.individuals[id];
 };
@@ -135,7 +152,8 @@ function personSVG(ind) {
             var pers = draw.group();
             //pers.add(draw.element('title').words(popupTxt(child)));
             var txt = popupTxt(child);
-            try {var img = child.imageIds[0][1];}
+            //try {var img = child.imageIds[0][1];}
+            try {var img = bestImgId(child, endDate);}
             catch (err) { var img='';}
             pers.add(draw.circle(10).attr({cx: pos.x, cy: pos.y, stroke: color, fill: color,
                                            onmousemove: "showPopupimage(evt, '"+txt+"', '"+img+"');",
