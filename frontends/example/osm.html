@@ -16,39 +16,55 @@
     <script src="../facetree.js"></script>
   </head>
   <body>
-    <div id="map"></div>
+    <div id="map" style="display:none"></div>
+    <form id="login">
+        <label for="username"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" id="username" required>
+
+        <label for="password"><b>Password</b></label>
+        <input type="password" placeholder="Enter Password" name="password" id="password" required>
+
+        <button type="button" onclick="login()">Login</button>
+    </form>
+
     <script>
-var map = L.map('map').setView([60, 15], 5);
-var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-var osmAttrib='Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
-var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 11, attribution: osmAttrib}).addTo(map);
-axios.post(facetree_backend + "/v1/users/login/password", {
-    "email": "test00",
-    "password": ""
-})
-    .then(function (response) {
-        start_database_updater(response.data.token, function (updated_records) {
-            for (var id in database.individuals) {
-                // console.log(database.individuals[id].name);
-                if (database.individuals[id].location) {
-                    loc_list = database.individuals[id].location[0];
-                    if (loc_list['long']) {
-                        var long = parseFloat(loc_list['long']) + Math.random()*0.0001;
-                        var lat = parseFloat(loc_list['lat']) + Math.random()*0.0001;
-                        // console.log(long, lat);
-                        var marker = L.marker([lat,long])
-                            .addTo(map)
-                            .bindPopup("<h3>" + database.individuals[id].name + "</h3>")
-                        map.addLayer(marker)
+
+    function login() {
+        axios.post(facetree_backend + "/v1/users/login/password", {
+            "email": document.getElementById('username').value,
+            "password": document.getElementById('password').value
+        })
+        .then(function (response) {
+            document.getElementById('login').style.display="none";
+            document.getElementById('map').style.display="";
+            var map = L.map('map').setView([60, 15], 5);
+            var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            var osmAttrib='Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+            var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 11, attribution: osmAttrib}).addTo(map);
+            
+            start_database_updater(response.data.token, function (updated_records) {
+                for (var id in database.individuals) {
+                    // console.log(database.individuals[id].name);
+                    if (database.individuals[id].location) {
+                        loc_list = database.individuals[id].location[0];
+                        if (loc_list['long']) {
+                            var long = parseFloat(loc_list['long']) + Math.random() * 0.0001;
+                            var lat = parseFloat(loc_list['lat']) + Math.random() * 0.0001;
+                            // console.log(long, lat);
+                            var marker = L.marker([lat, long])
+                                .addTo(map)
+                                .bindPopup("<h3>" + database.individuals[id].name + "</h3>")
+                            map.addLayer(marker)
+                        }
                     }
                 }
-            }
+            });
+        })
+        .catch(function (error) {
+            console.log("Login failed.")
+            console.log(error);
         });
-    })
-    .catch(function (error) {
-        console.log("Login failed.")
-        console.log(error);
-    });
+    }
     </script>
   </body>
 </html>
