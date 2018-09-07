@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Facetree map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" crossorigin=""></script>
+    <style type="text/css">
+      html, body { height: 100%; margin: 0; padding: 0; }
+      #map { height: 100%; }
+    </style>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../backend_name.js"></script>
+    <script src="../facetree.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+var map = L.map('map').setView([60, 15], 5);
+var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+var osmAttrib='Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 11, attribution: osmAttrib}).addTo(map);
+axios.post(facetree_backend + "/v1/users/login/password", {
+    "email": "test00",
+    "password": ""
+})
+    .then(function (response) {
+        start_database_updater(response.data.token, function (updated_records) {
+            for (var id in database.individuals) {
+                // console.log(database.individuals[id].name);
+                if (database.individuals[id].location) {
+                    loc_list = database.individuals[id].location[0];
+                    if (loc_list['long']) {
+                        var long = parseFloat(loc_list['long']) + Math.random()*0.0001;
+                        var lat = parseFloat(loc_list['lat']) + Math.random()*0.0001;
+                        // console.log(long, lat);
+                        var marker = L.marker([lat,long])
+                            .addTo(map)
+                            .bindPopup("<h3>" + database.individuals[id].name + "</h3>")
+                        map.addLayer(marker)
+                    }
+                }
+            }
+        });
+    })
+    .catch(function (error) {
+        console.log("Login failed.")
+        console.log(error);
+    });
+    </script>
+  </body>
+</html>
