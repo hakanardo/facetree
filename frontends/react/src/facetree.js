@@ -1,21 +1,23 @@
 import axios from 'axios';
 class Facetree {
 
+    facetree_backend = 'https://facetree-dev.ardoe.net';
+
     database = {
-        "individuals": {},
-        "families": {},
-        "parentin": {},
-        "childin": {}
+        individuals: {},
+        families: {},
+        parentin: {},
+        childin: {}
     };
 
-    add_to_index_set(index, individual_id, family) {
+    add_to_index_set = (index, individual_id, family) => {
         if (!index[individual_id]) {
             index[individual_id] = new Set();
         }
         index[individual_id].add(family);
     }
 
-    database_add_records(records) {
+    database_add_records = records => {
         for (var i in records) {
             var rec = records[i];
             if (rec.type == 'Individual') {
@@ -51,10 +53,10 @@ class Facetree {
         }
     }
 
-    database_poll(since) {
+    database_poll = since => {
         setTimeout(function () {
             axios.get(this.facetree_backend + "/v1/updates/" + since, {"headers": this.auth_headers})
-            .then(function (response) {
+            .then(response => {
                 this.auth_token = response.data.token;
                 this.database_add_records(response.data.records);
                 this.database_poll(response.data.since);
@@ -66,17 +68,17 @@ class Facetree {
         }, 1);
     }
 
-    database_download() {
+    database_download = () => {
         axios.get(this.facetree_backend + "/v1/records", {"headers": this.auth_headers})
-        .then(function (response) {
+        .then(response => {
             this.database_add_records(response.data);
         })
-        .catch(function (error) {
-            console.log("Records failed.", error)
-        });
+        //.catch(function (error) {
+            //console.log("Records failed.", error)
+        //});
     }
 
-    database_updater(auth_token, updated_cb) {
+    database_updater = (auth_token, updated_cb) => {
         this.database.updated_cb = updated_cb;
         this.auth_headers = {"Authorization": "Bearer " + auth_token};
         this.database_poll("NOW");
@@ -84,5 +86,5 @@ class Facetree {
     }
 
 }
-let facetree = new Facetree();
-export { facetree };
+
+export default new Facetree()
