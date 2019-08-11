@@ -15,7 +15,6 @@ const parseTree = database => {
     //root: database.root
     root: buildIndividual(database.root)
   }
-  console.log(tree)
   return tree
 }
 
@@ -43,7 +42,9 @@ class App extends Component {
     super(props)
     this.state = {
       //loading: true,
-      treeMode: 'Edged'
+      treeMode: 'Edged',
+      animate: false,
+      auth: null,
     }
   }
   login = event => {
@@ -51,16 +52,20 @@ class App extends Component {
     axios.post(facetree_backend + "/v1/users/login/password", {
       "email": this.state.username,
       "password": this.state.password
-    }).then((response) => {
-      this.mode = "Loading";
+    }).then(response => {
+      this.setState({
+        auth: response.data.token,
+        loading: true,
+      })
       console.log('logged in')
       facetree.database_updater(response.data.token, updated_records => {
         console.log(updated_records)
         console.log(facetree.database)
         const treeData = parseTree(facetree.database)
-        this.setState({treeData})
-        this.mode = "Tree";
-        this.curent_individual = facetree.database.root.id;
+        this.setState({
+          treeData,
+          loading: false,
+        })
       });
     }).catch((error) => {
       console.log(error);
@@ -111,8 +116,10 @@ class App extends Component {
     }
   }
   render() {
+    const { treeData, treeMode, animate, loading, auth } = this.state
     return (
       <div id="root">
+        {!auth && (
         <form onSubmit={this.login}>
           <label for="uname"><b>Username</b></label>
           <input onChange={event => this.state.username = event.target.value} type="text" placeholder="Enter Username" name="uname" required />
@@ -122,13 +129,16 @@ class App extends Component {
 
           <button type="submit">Login</button>
         </form>
-        <button onClick={event => this.setState({treeMode: 'Edged'})}>Edged</button>
-        <button onClick={event => this.setState({treeMode: 'Smooth'})}>Smooth</button>
-
-        {this.state.treeData && (
-          <Chart data={this.state.treeData} mode={this.state.treeMode} />
         )}
-
+        {loading && <h3>Laddar...</h3>}
+        {auth && treeData && (
+          <div>
+            <button onClick={() => this.setState({treeMode: 'Edged'})}>Edged</button>
+            <button onClick={() => this.setState({treeMode: 'Smooth'})}>Smooth</button>
+            <button onClick={() => this.setState(state => ({animate: !state.animate}))}>Animate</button>
+            <Chart data={treeData} mode={treeMode} animate={animate} />
+          </div>
+        )}
       </div>
     );
   }
