@@ -75,61 +75,85 @@ function makeLinkPath(d) {
   return path.join(' ')
 }
 const makeRadialLink = d3.linkRadial().angle(d => d.x).radius(d => d.data.generation*distanceGen)
+
+const styles = {
+  tooltip: {
+    opacity: 1,
+    position: "absolute",
+    top: 0,
+    backgroundColor: "white",
+    border: "solid",
+    borderWidth: "2px",
+    borderRadius: "5px",
+    padding: "5px",
+  },
+  svg: {
+    height: "95vh",
+    width: "100%",
+    font: "10px sans-serif",
+    margin: "5px",
+  },
+  node: {
+    opacity: 1,
+  },
+  nodeCircle: {
+    opacity: 0,
+    zIndex: 2,
+  },
+  nodeText: {
+    opacity: 0,
+    zIndex: 4,
+  },
+  link: {
+    fill: "none",
+    //stroke: "#555",
+    strokeWidth: 1,
+    zIndex: 1,
+  },
+}
 export default class Chart extends Component {
 
+  chartRef = React.createRef()
+  nodesRef = React.createRef()
+  linksRef = React.createRef()
+  svgRef = React.createRef()
+  treeRef = React.createRef()
+  
   state = {}
 
   componentDidMount() {
-    this.drawTree()
+    this.updateD3(this.props)
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(nextProps) {
     const { mode } = this.props
-    if (prevProps.mode !== mode) {
+    if (nextProps.mode !== mode) {
       const link = d3.selectAll('.link')
         .transition()
         .duration(1500)
         .attr("d", mode === 'Edged' ? makeLinkPath : makeRadialLink)
     }
+    this.updateD3(nextProps)
   }
 
-  drawTree() {
-    const root = tree(this.props.data.root)
+  updateD3(props) {
+    const root = tree(props.data.root)
+    if (!root) return 
 
-    const chart = d3.select("#chart")
+    const treeNodes = root ? root.descendants().reverse() : []
 
-    const mode = this.props.mode || 'Edged'
+    const mode = props.mode || 'Edged'
 
-    function zoom() {
-      treeContainer.attr("transform", d3.event.transform);
-    }
+    const chart = d3.select(this.chartRef.current)
+    const svg = d3.select(this.svgRef.current)
+    const treeContainer = d3.select(this.treeRef.current)
+    const tooltip = svg.select('.tooltip')
 
-    const svg = chart
-      .append('svg')
-      .style("max-height", "95vh")
-      .style("width", "auto")
-      .style("font", "10px sans-serif")
-      .style("margin", "5px")
-      .attr("pointer-events", "all")
-      .call(d3.zoom()
-          .scaleExtent([1, 8])
-          .on("zoom", zoom));
-
-    const treeContainer = svg.append("g")
-
-    const tooltip = chart
-      .append("div")
-      .style("opacity", 1)
-      .attr("class", "tooltip")
-      .style("position", "absolute")
-      .style("top", 0)
-      .style("background-color", "white")
-      .style("border", "solid")
-      .style("border-width", "2px")
-      .style("border-radius", "5px")
-      .style("padding", "5px")
-
-    //console.log(chart.node().getBoundingClientRect())
+    svg.call(
+      d3.zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", () => console.log(d3.event.transform) || treeContainer.attr("transform", d3.event.transform))
+    )
 
     function mouseover(d) {
       console.log(d.x, d.y, d.data.alpha, d.data.name)
@@ -155,9 +179,8 @@ export default class Chart extends Component {
         .style("stroke", "none")
     }
 
-    const yearText = treeContainer.append("text")
-      .attr("font-size", "8em")
-      .text(startYear)
+    const yearText = d3.select(this.refs.yearText)
+    yearText
       .attr("transform", function(d) {
         const width = this.getComputedTextLength()
         return `translate(${-width/2.0}, -25)`
@@ -178,89 +201,111 @@ export default class Chart extends Component {
           .transition()
           .on("start", repeat);
       });
-    const node = treeContainer.append("g").selectAll(".individual")
-      .data(root.descendants().reverse())
-      .enter().append("g")
-      .attr("class", d => "individual" + (d.children ? " node--internal" : " node--leaf"))
-      .attr("transform", d => coordAsTransform(pol2cart(d.y, d.x)))
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-width", 3)
-      .style('opacity', 1)
-    const link = treeContainer.append("g")
-      .selectAll(".link")
-      .data(root.links())
-      .enter().append("path")
-      .attr("class", "link")
-      //.style("opacity", 0)
-      .attr("fill", "none")
-      .attr("stroke", "#555")
-      .attr("stroke-width", 1)
-      .attr("d", mode === 'Edged' ? makeLinkPath : makeRadialLink)
+
+    const nodes = d3.select(this.nodesRef.current)
 
     const transition = d3.transition('grow').duration(animationSpeed).ease(d3.easeQuadIn)
 
-    link
-      .attr("stroke-dasharray", function(d) { return this.getTotalLength() + " " + this.getTotalLength()})
-      .attr("stroke-dashoffset", function(d) { return this.getTotalLength()})
+    const links = d3.select(this.linksRef.current)
+
+    links.selectAll('.link')
+      .data(root.links())
+      //.attr('stroke-dasharray', function(d) { this.getTotalLength() + " " + d.node.getTotalLength()})
+      //.attr('stroke-dashoffset', function(d) { this.getTotalLength()})
       .transition(transition)
-      //.delay(d => d.source.data.generation*transition.duration())
       .delay(d => (d.target.data.birth.from - startYear)*transition.duration())
       .style("opacity", 1)
       .attr("stroke", d => d.source.data.color ? colLookUp[d.source.data.color] : "#999")
       //.ease(d3.easeLinear)
-      .attr("stroke-dashoffset", 0)
+      //.attr("stroke-dashoffset", 0)
 
-    node
+    const nodesData = nodes.selectAll('.individual').data(treeNodes)
+
+    nodesData
       .transition(transition)
-      //.delay(d => (d.data.generation-1)*transition.duration())
       .delay(d => (d.data.birth.from - startYear)*transition.duration())
       .attr("transform", d => coordAsTransform(pol2cart(mode === 'Edged' ? d.data.generation * distanceGen : d.y, d.x)))
       .style('opacity', 1)
 
-    node.append("circle")
-      .attr("fill", d => d.data.color ? colLookUp[d.data.color] : "#999")
-      .attr("r", 7)
-      .attr("opacity", 0)
-      .transition(transition)
-      //.delay(d => d.data.generation*transition.duration() - transition.duration()/1.5)
-      .delay(d => (d.data.birth.from - startYear)*transition.duration())
-      .style("opacity", 1)
-
-    node.append("text")
-      .attr("dy", "0.31em")
-      .attr("x", d => d.x < Math.PI === !d.children ? 9 : -9)
-      .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-      .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
-      .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI/2.0 : d.x + Math.PI/2.0) * 180 / Math.PI + ")"; })
-      .attr("opacity", 0)
-      .text(d => d.data.name)
-      .clone(true).lower()
-      //.attr("stroke", "white")
-      .transition(transition)
-      //.delay(d => d.data.generation*transition.duration())
-      .delay(d => (d.data.birth.from - startYear + 1)*transition.duration())
-      .attr('opacity', 1)
-
-    node
+    nodesData
       .on("mousemove", mousemove)
       .on('mouseover', mouseover)
       .on('mouseout', mouseleave)
       .on('click', toggleChildren)
 
 
-    const svgNode = svg.node()
-    svg.attr("viewBox", autoBox(svgNode))
-    this.setState({
-      node,
-      link,
-      svg,
-      chart,
-      treeContainer
-    })
+    nodes.selectAll('circle')
+      .data(treeNodes)
+      .transition(transition)
+      .delay(d => (d.data.birth.from - startYear)*transition.duration())
+      .style("opacity", 1)
+
+    nodes.selectAll('text')
+      .data(treeNodes)
+      .clone(true).lower()
+      .transition(transition)
+      .delay(d => (d.data.birth.from - startYear + 1)*transition.duration())
+      .style('opacity', 1)
+
   }
 
   render() {
-    return <div id="chart"></div>
+    //const { treeRoot, links } = this.state
+    const { data, mode } = this.props
+    const treeRoot = tree(data.root)
+    const treeNodes = treeRoot ? treeRoot.descendants().reverse() : []
+    const links = treeRoot.links()
+    return (
+      <div ref={this.chartRef}>
+        <svg
+          style={styles.svg}
+          pointerEvents="all"
+          ref={this.svgRef}
+          viewBox={[-height/2, -width/2, height, width]}
+          // width={width}
+          // height={height}
+          >
+          <div className="tooltip" style={styles.tooltip} />
+          <g ref={this.treeRef}>
+            <text style={{fontSize: '8em'}} ref="yearText">{startYear}</text>
+            <g ref={this.linksRef}>
+              {links && links.map(d => (
+                <path
+                  className="link"
+                  style={styles.link}
+                  d={mode === 'Edged' ? makeLinkPath(d) : makeRadialLink(d)}
+                />
+              ))}
+            </g>
+            <g ref={this.nodesRef}>
+            {treeNodes.map(d => (
+              <g
+                className={`individual ${(d.children ? 'node--internal' : 'node--leaf')}`}
+                style={styles.node}
+                transform={coordAsTransform(pol2cart(d.y, d.x))}
+                strokeLinejoin="round"
+                strokeWidth={3}
+              >
+                <circle
+                  r={7}
+                  style={styles.nodeCircle}
+                  fill={d.data.color ? colLookUp[d.data.color] : "#999"}
+                />
+                <text
+                  dy={"0.31em"}
+                  x={d.x < Math.PI === !d.children ? 9 : -9}
+                  textAnchor={d.x < Math.PI === !d.children ? "start" : "end"}
+                  transform={"rotate(" + (d.x < Math.PI ? d.x - Math.PI/2.0 : d.x + Math.PI/2.0) * 180 / Math.PI + ")"}
+                  opacity={0}
+                  style={styles.nodeText}
+                >{d.data.name}</text>
+              </g>
+            ))}
+            </g>
+          </g>
+        </svg>
+      </div>
+    )
   }
 
 
