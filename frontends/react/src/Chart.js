@@ -78,20 +78,20 @@ const makeRadialLink = d3.linkRadial().angle(d => d.x).radius(d => d.data.genera
 
 const styles = {
   tooltip: {
-    opacity: 1,
+    opacity: 0,
     position: "absolute",
     top: 0,
     backgroundColor: "white",
     border: "solid",
-    borderWidth: "2px",
-    borderRadius: "5px",
-    padding: "5px",
+    borderWidth: 2,
+    borderRadius: 5,
+    padding: 5,
   },
   svg: {
-    height: "95vh",
+    maxHeight: "95vh",
     width: "100%",
     font: "10px sans-serif",
-    margin: "5px",
+    margin: 5,
   },
   node: {
     opacity: 1,
@@ -106,10 +106,66 @@ const styles = {
   },
   link: {
     fill: "none",
+    opacity: 0,
     //stroke: "#555",
     strokeWidth: 1,
     zIndex: 1,
   },
+}
+
+function Individual({data: d, onHover, onLeave}) {
+  const circleRef = React.createRef()
+  return (
+    <g
+      className={`individual ${(d.children ? 'node--internal' : 'node--leaf')}`}
+      style={styles.node}
+      transform={coordAsTransform(pol2cart(d.y, d.x))}
+      strokeLinejoin="round"
+      strokeWidth={3}
+      onMouseEnter={event => {
+        if (onHover) {
+          onHover({
+            x: event.pageX,
+            y: event.pageY,
+          }, d.data.name)
+        }
+        d3.select(circleRef.current).style('stroke', 'black')
+        }
+      }
+      onMouseLeave={event => {
+        if (onLeave) onLeave()
+        d3.select(circleRef.current).style('stroke', 'none')
+        }
+      }
+    >
+      <circle
+        r={7}
+        style={styles.nodeCircle}
+        fill={d.data.color ? colLookUp[d.data.color] : "#999"}
+        ref={circleRef}
+      />
+      <text
+        dy={"0.31em"}
+        x={d.x < Math.PI === !d.children ? 8 : -8}
+        y={d.children ? (d.x < Math.PI ? 8 : -8) : 0}
+        textAnchor={d.x < Math.PI === !d.children ? "start" : "end"}
+        transform={"rotate(" + (d.x < Math.PI ? d.x - Math.PI/2.0 : d.x + Math.PI/2.0) * 180 / Math.PI + ")"}
+        opacity={0}
+        style={styles.nodeText}
+      >{d.data.name}</text>
+    </g>
+  )
+}
+
+function Link({data, mode}) {
+  return (
+    <path
+      className="link"
+      style={styles.link}
+      stroke={data.source.data.color ? colLookUp[data.source.data.color] : "#999"}
+      d={mode === 'Edged' ? makeLinkPath(data) : makeRadialLink(data)}
+    />
+  )
 }
 export default class Chart extends Component {
 
@@ -118,75 +174,48 @@ export default class Chart extends Component {
   linksRef = React.createRef()
   svgRef = React.createRef()
   treeRef = React.createRef()
+  yearTextRef = React.createRef()
   
-  state = {}
+  state = {
+    tooltipDynamicStyle: {},
+    tooltipText: '',
+  }
 
   componentDidMount() {
     this.updateD3(this.props)
   }
 
-  componentDidUpdate(nextProps) {
-    const { mode } = this.props
-    if (nextProps.mode !== mode) {
+  componentDidUpdate(prevProps) {
+    const { mode, animate } = this.props
+    if (prevProps.mode !== mode) {
       const link = d3.selectAll('.link')
         .transition()
         .duration(1500)
-        .attr("d", mode === 'Edged' ? makeLinkPath : makeRadialLink)
+        .attr("d", d => mode === 'Edged' ? makeLinkPath(d) : makeRadialLink(d))
     }
-    this.updateD3(nextProps)
+    if (prevProps.data !== this.props.data) {
+      console.log('data changed')
+      this.updateD3(prevProps)
+    }
+    if (prevProps.animate !== animate) {
+      if (animate) {
+        this.queueTransitions()
+      } else {
+        const svg = d3.select(this.svgRef.current)
+        svg.selectAll('.individual').interrupt('grow').selectAll('*').interrupt('grow')
+        svg.selectAll('.link').interrupt('grow')
+        d3.select(this.yearTextRef.current).interrupt()
+      }
+    }
   }
 
-  updateD3(props) {
-    const root = tree(props.data.root)
-    if (!root) return 
+  queueTransitions() {
+    console.log('queing transitions')
+    const root = tree(this.props.data.root)
 
     const treeNodes = root ? root.descendants().reverse() : []
 
-    const mode = props.mode || 'Edged'
-
-    const chart = d3.select(this.chartRef.current)
-    const svg = d3.select(this.svgRef.current)
-    const treeContainer = d3.select(this.treeRef.current)
-    const tooltip = svg.select('.tooltip')
-
-    svg.call(
-      d3.zoom()
-      .scaleExtent([1, 8])
-      .on("zoom", () => console.log(d3.event.transform) || treeContainer.attr("transform", d3.event.transform))
-    )
-
-    function mouseover(d) {
-      console.log(d.x, d.y, d.data.alpha, d.data.name)
-      tooltip
-        .style("opacity", 1)
-      d3.select(this).selectAll('circle')
-        .style("stroke", "black")
-    }
-
-    function mousemove(d) {
-      const [mouseX, mouseY] = d3.mouse(this)
-      const [x, y] = polToCart(d.x, d.y)
-      tooltip
-        .html("Personen heter: " + d.data.name)
-        .style("left", (d3.event.pageX + 7) + "px")
-        .style("top", (d3.event.pageY) + "px")
-    }
-
-    function mouseleave(d) {
-      tooltip
-        .style("opacity", 0)
-      d3.select(this).selectAll('circle')
-        .style("stroke", "none")
-    }
-
-    const yearText = d3.select(this.refs.yearText)
-    yearText
-      .attr("transform", function(d) {
-        const width = this.getComputedTextLength()
-        return `translate(${-width/2.0}, -25)`
-      })
-
-    yearText
+    d3.select(this.yearTextRef.current)
       .transition()
       .duration(animationSpeed)
       .on("start", function repeat() {
@@ -215,7 +244,6 @@ export default class Chart extends Component {
       .transition(transition)
       .delay(d => (d.target.data.birth.from - startYear)*transition.duration())
       .style("opacity", 1)
-      .attr("stroke", d => d.source.data.color ? colLookUp[d.source.data.color] : "#999")
       //.ease(d3.easeLinear)
       //.attr("stroke-dashoffset", 0)
 
@@ -223,16 +251,9 @@ export default class Chart extends Component {
 
     nodesData
       .transition(transition)
-      .delay(d => (d.data.birth.from - startYear)*transition.duration())
-      .attr("transform", d => coordAsTransform(pol2cart(mode === 'Edged' ? d.data.generation * distanceGen : d.y, d.x)))
+      .delay(d => (d.data.birth.from - startYear) * transition.duration())
+      .attr("transform", d => coordAsTransform(pol2cart(this.props.mode === 'Edged' ? d.data.generation * distanceGen : d.y, d.x)))
       .style('opacity', 1)
-
-    nodesData
-      .on("mousemove", mousemove)
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseleave)
-      .on('click', toggleChildren)
-
 
     nodes.selectAll('circle')
       .data(treeNodes)
@@ -246,17 +267,62 @@ export default class Chart extends Component {
       .transition(transition)
       .delay(d => (d.data.birth.from - startYear + 1)*transition.duration())
       .style('opacity', 1)
+  }
 
+  updateD3() {
+
+    const svg = d3.select(this.svgRef.current)
+    const treeContainer = d3.select(this.treeRef.current)
+
+    svg.call(
+      d3.zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", () => treeContainer.attr("transform", d3.event.transform))
+    )
+
+    const yearText = d3.select(this.yearTextRef.current)
+    yearText
+      .attr("transform", function(d) {
+        const width = this.getComputedTextLength()
+        return `translate(${-width/2.0}, -25)`
+      })
+
+  }
+
+  closeTooltip = () => {
+    this.setState({
+      tooltipDynamicStyle: {
+        opacity: 0,
+      },
+      tooltipText: ""
+    })
+  }
+
+  openTooltip = (pos, text) => {
+    this.setState({
+      tooltipDynamicStyle: {
+        opacity: 1,
+        left: pos.x,
+        top: pos.y + 7,
+      },
+      tooltipText: text 
+    })
   }
 
   render() {
     //const { treeRoot, links } = this.state
     const { data, mode } = this.props
+    const { tooltipDynamicStyle, tooltipText } = this.state
     const treeRoot = tree(data.root)
     const treeNodes = treeRoot ? treeRoot.descendants().reverse() : []
-    const links = treeRoot.links()
+    const links = treeRoot ? treeRoot.links() : []
+    console.log(links, treeNodes)
     return (
       <div ref={this.chartRef}>
+        <div id="tooltip" style={{
+          ...styles.tooltip,
+          ...tooltipDynamicStyle,
+        }}>{tooltipText}</div>
         <svg
           style={styles.svg}
           pointerEvents="all"
@@ -264,43 +330,14 @@ export default class Chart extends Component {
           viewBox={[-height/2, -width/2, height, width]}
           // width={width}
           // height={height}
-          >
-          <div className="tooltip" style={styles.tooltip} />
+        >
           <g ref={this.treeRef}>
-            <text style={{fontSize: '8em'}} ref="yearText">{startYear}</text>
+            <text style={{fontSize: '8em'}} ref={this.yearTextRef}>{startYear}</text>
             <g ref={this.linksRef}>
-              {links && links.map(d => (
-                <path
-                  className="link"
-                  style={styles.link}
-                  d={mode === 'Edged' ? makeLinkPath(d) : makeRadialLink(d)}
-                />
-              ))}
+              {links.map((link, i) => <Link key={i} mode={mode} data={link} />)}
             </g>
             <g ref={this.nodesRef}>
-            {treeNodes.map(d => (
-              <g
-                className={`individual ${(d.children ? 'node--internal' : 'node--leaf')}`}
-                style={styles.node}
-                transform={coordAsTransform(pol2cart(d.y, d.x))}
-                strokeLinejoin="round"
-                strokeWidth={3}
-              >
-                <circle
-                  r={7}
-                  style={styles.nodeCircle}
-                  fill={d.data.color ? colLookUp[d.data.color] : "#999"}
-                />
-                <text
-                  dy={"0.31em"}
-                  x={d.x < Math.PI === !d.children ? 9 : -9}
-                  textAnchor={d.x < Math.PI === !d.children ? "start" : "end"}
-                  transform={"rotate(" + (d.x < Math.PI ? d.x - Math.PI/2.0 : d.x + Math.PI/2.0) * 180 / Math.PI + ")"}
-                  opacity={0}
-                  style={styles.nodeText}
-                >{d.data.name}</text>
-              </g>
-            ))}
+              {treeNodes.map((node, i) => <Individual key={i} data={node} onHover={this.openTooltip} onLeave={this.closeTooltip} onClick={this.openModal} />)}
             </g>
           </g>
         </svg>
