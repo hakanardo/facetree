@@ -71,6 +71,9 @@ export default class Chart extends Component {
 
   componentDidMount() {
     this.updateD3(this.props)
+    // initial tree animation
+    this.initialTransitions()
+    //this.queueTransitions(20)
   }
 
   componentDidUpdate(prevProps) {
@@ -97,7 +100,50 @@ export default class Chart extends Component {
     }
   }
 
-  queueTransitions() {
+  initialTransitions() {
+    const animationSpeed = 200
+    const root = tree(this.props.data.root)
+
+    const treeNodes = root ? root.descendants().reverse() : []
+
+    const nodes = d3.select(this.nodesRef.current)
+
+    const transition = d3.transition('grow').duration(animationSpeed).ease(d3.easeQuadIn)
+
+    const links = d3.select(this.linksRef.current)
+
+    links.selectAll('.link')
+      .data(root.links())
+      //.attr('stroke-dasharray', function(d) { this.getTotalLength() + " " + d.node.getTotalLength()})
+      //.attr('stroke-dashoffset', function(d) { this.getTotalLength()})
+      .transition(transition)
+      .delay(d => d.target.data.generation * transition.duration())
+      .style("opacity", 1)
+      //.ease(d3.easeLinear)
+      //.attr("stroke-dashoffset", 0)
+
+    const nodesData = nodes.selectAll('.individual').data(treeNodes)
+
+    nodesData
+      .transition(transition)
+      .delay(d => d.data.generation * transition.duration())
+      .attr("transform", d => coordAsTransform(pol2cart(this.props.mode === 'Edged' ? d.data.generation * distanceGen : d.y, d.x)))
+      .style('opacity', 1)
+
+    nodes.selectAll('circle')
+      .data(treeNodes)
+      .transition(transition)
+      .delay(d => d.data.generation * transition.duration())
+      .style("opacity", 1)
+
+    nodes.selectAll('text')
+      .data(treeNodes)
+      .transition(transition)
+      .delay(d => (d.data.generation) * transition.duration())
+      .style('opacity', 1)
+  }
+
+  queueTransitions(animationSpeed) {
     console.log('queing transitions')
     const root = tree(this.props.data.root)
 
