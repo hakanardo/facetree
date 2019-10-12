@@ -1,5 +1,9 @@
 import React, { Component } from 'react'
 import * as d3 from "d3";
+import facetree from './facetree'
+import Individual from './Individual'
+import { Link, makeRadialLink, makeLinkPath } from './Link'
+import { pol2cart, coordAsTransform } from './utils'
 
 const distanceGen = 140;
 const genCount = 7
@@ -8,7 +12,6 @@ const height = width
 const animationSpeed = 150
 const startYear = 1810
 const endYear = 2019
-const colLookUp = {'blå': 'blue', 'grön': 'green', 'gul': 'yellow', 'röd': 'red'};
 
 function autoBox(node) {
   const { x, y, width, height } = node.getBBox();
@@ -22,13 +25,6 @@ const tree = data => d3.tree()
   })
   (d3.hierarchy(data))
 
-const polToCart = (theta, r) => [r * Math.cos(theta), r * Math.sin(theta)]
-const pol2cart = (r, theta) => ({
-  x: r * Math.cos(theta - Math.PI/2),
-  y: r * Math.sin(theta - Math.PI/2)
-})
-
-const coordAsTransform = cart => `translate(${cart.x}, ${cart.y})`
 const toggleChildren = d => {
   if (d.children) {
       d._children = d.children;
@@ -39,42 +35,6 @@ const toggleChildren = d => {
   }
   return d;
 }
-
-function makeLinkPath(d) {
-  const ind = d.source.data
-  const child = d.target.data
-  const gen = ind.generation
-  const indAlpha = d.source.x
-  const childAlpha = d.target.x
-  const distRing = (gen+1) * distanceGen - distanceGen/2.0
-  const indPos = gen === 1 ? {x: 0, y: 0} : pol2cart(gen * distanceGen, indAlpha)
-  const indRingPos = pol2cart(distRing, indAlpha)
-  const childRingPos = pol2cart(distRing, childAlpha)
-  const childPos = pol2cart((gen+1) * distanceGen, childAlpha)
-  const line1 = ['M', indPos.x, indPos.y, 'L', indRingPos.x, indRingPos.y]
-  const line2 = ['M', childRingPos.x, childRingPos.y, 'L', childPos.x, childPos.y]
-  let startAngle = childAlpha;
-  let endAngle = indAlpha;
-  if (indAlpha < childAlpha) {
-      startAngle = indAlpha;
-      endAngle = childAlpha;
-  }
-  let largeArc = 0;
-  let sweep = 1;
-  if (endAngle - startAngle > Math.PI) {
-      largeArc = 1;
-      if (endAngle - startAngle > 3 * Math.PI/4) {
-          largeArc = 0
-          sweep = 0
-      }
-  }
-  const arcPos1 = pol2cart(distRing, startAngle)
-  const arcPos2 = pol2cart(distRing, endAngle)
-  const arc = ['M', arcPos1.x, arcPos1.y, 'A', distRing, distRing, 0, largeArc, sweep, arcPos2.x, arcPos2.y]
-  const path = [...line2, ...line1, ...arc]
-  return path.join(' ')
-}
-const makeRadialLink = d3.linkRadial().angle(d => d.x).radius(d => d.data.generation*distanceGen)
 
 const styles = {
   tooltip: {
@@ -93,79 +53,7 @@ const styles = {
     font: "10px sans-serif",
     margin: 5,
   },
-  node: {
-    opacity: 1,
-  },
-  nodeCircle: {
-    opacity: 0,
-    zIndex: 2,
-  },
-  nodeText: {
-    opacity: 0,
-    zIndex: 4,
-  },
-  link: {
-    fill: "none",
-    opacity: 0,
-    //stroke: "#555",
-    strokeWidth: 1,
-    zIndex: 1,
-  },
-}
 
-function Individual({data: d, onHover, onLeave}) {
-  const circleRef = React.createRef()
-  return (
-    <g
-      className={`individual ${(d.children ? 'node--internal' : 'node--leaf')}`}
-      style={styles.node}
-      transform={coordAsTransform(pol2cart(d.y, d.x))}
-      strokeLinejoin="round"
-      strokeWidth={3}
-      onMouseEnter={event => {
-        if (onHover) {
-          onHover({
-            x: event.pageX,
-            y: event.pageY,
-          }, d.data.name)
-        }
-        d3.select(circleRef.current).style('stroke', 'black')
-        }
-      }
-      onMouseLeave={event => {
-        if (onLeave) onLeave()
-        d3.select(circleRef.current).style('stroke', 'none')
-        }
-      }
-    >
-      <circle
-        r={7}
-        style={styles.nodeCircle}
-        fill={d.data.color ? colLookUp[d.data.color] : "#999"}
-        ref={circleRef}
-      />
-      <text
-        dy={"0.31em"}
-        x={d.x < Math.PI === !d.children ? 8 : -8}
-        y={d.children ? (d.x < Math.PI ? 8 : -8) : 0}
-        textAnchor={d.x < Math.PI === !d.children ? "start" : "end"}
-        transform={"rotate(" + (d.x < Math.PI ? d.x - Math.PI/2.0 : d.x + Math.PI/2.0) * 180 / Math.PI + ")"}
-        opacity={0}
-        style={styles.nodeText}
-      >{d.data.name}</text>
-    </g>
-  )
-}
-
-function Link({data, mode}) {
-  return (
-    <path
-      className="link"
-      style={styles.link}
-      stroke={data.source.data.color ? colLookUp[data.source.data.color] : "#999"}
-      d={mode === 'Edged' ? makeLinkPath(data) : makeRadialLink(data)}
-    />
-  )
 }
 export default class Chart extends Component {
 
