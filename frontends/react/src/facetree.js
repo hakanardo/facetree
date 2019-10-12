@@ -73,9 +73,9 @@ class Facetree {
         .then(response => {
             this.database_add_records(response.data);
         })
-        //.catch(function (error) {
-            //console.log("Records failed.", error)
-        //});
+        .catch(function (error) {
+            console.log("Records failed.", error)
+        });
     }
 
     database_updater = (auth_token, updated_cb) => {

@@ -4,6 +4,9 @@ import axios from 'axios';
 import facetree from './facetree'
 import './App.css';
 import Chart from './Chart'
+import Login from './Login'
+import { Button, CircularProgress } from '@material-ui/core'
+
 const facetree_backend = 'https://facetree-dev.ardoe.net';
 
 // test00
@@ -47,11 +50,11 @@ class App extends Component {
       auth: null,
     }
   }
-  login = event => {
+  login = (username, password) => {
     console.log('Try to log in')
     axios.post(facetree_backend + "/v1/users/login/password", {
-      "email": this.state.username,
-      "password": this.state.password
+      "email": username,
+      "password": password
     }).then(response => {
       this.setState({
         auth: response.data.token,
@@ -59,8 +62,6 @@ class App extends Component {
       })
       console.log('logged in')
       facetree.database_updater(response.data.token, updated_records => {
-        console.log(updated_records)
-        console.log(facetree.database)
         const treeData = parseTree(facetree.database)
         this.setState({
           treeData,
@@ -68,9 +69,8 @@ class App extends Component {
         })
       });
     }).catch((error) => {
-      console.log(error);
+      console.error(error);
     });
-    event.preventDefault();
   }
   parentin = id => {
     var families = [];
@@ -120,22 +120,14 @@ class App extends Component {
     return (
       <div id="root">
         {!auth && (
-        <form onSubmit={this.login}>
-          <label for="uname"><b>Username</b></label>
-          <input onChange={event => this.state.username = event.target.value} type="text" placeholder="Enter Username" name="uname" required />
-
-          <label for="psw"><b>Password</b></label>
-          <input onChange={event => this.state.password = event.target.value} type="password" placeholder="Enter Password" name="psw" required />
-
-          <button type="submit">Login</button>
-        </form>
+          <Login onSubmit={this.login} />
         )}
-        {loading && <h3>Laddar...</h3>}
+        {loading && <CircularProgress />}
         {auth && treeData && (
           <div>
-            <button onClick={() => this.setState({treeMode: 'Edged'})}>Edged</button>
-            <button onClick={() => this.setState({treeMode: 'Smooth'})}>Smooth</button>
-            <button onClick={() => this.setState(state => ({animate: !state.animate}))}>Animate</button>
+            <Button onClick={() => this.setState({treeMode: 'Edged'})}>Edged</Button>
+            <Button onClick={() => this.setState({treeMode: 'Smooth'})}>Smooth</Button>
+            <Button onClick={() => this.setState(state => ({animate: !state.animate}))}>Animate</Button>
             <Chart data={treeData} mode={treeMode} animate={animate} />
           </div>
         )}
