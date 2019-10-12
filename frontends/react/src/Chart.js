@@ -263,7 +263,6 @@ export default class Chart extends Component {
 
     nodes.selectAll('text')
       .data(treeNodes)
-      .clone(true).lower()
       .transition(transition)
       .delay(d => (d.data.birth.from - startYear + 1)*transition.duration())
       .style('opacity', 1)
@@ -274,11 +273,13 @@ export default class Chart extends Component {
     const svg = d3.select(this.svgRef.current)
     const treeContainer = d3.select(this.treeRef.current)
 
-    svg.call(
+    const zoom =
       d3.zoom()
       .scaleExtent([1, 8])
       .on("zoom", () => treeContainer.attr("transform", d3.event.transform))
-    )
+    svg
+      .call(zoom)
+      .call(zoom.transform, d3.zoomIdentity.translate(100, 50).scale(1.5))
 
     const yearText = d3.select(this.yearTextRef.current)
     yearText
@@ -298,31 +299,43 @@ export default class Chart extends Component {
     })
   }
 
-  openTooltip = (pos, text) => {
+  openTooltip = (pos, text, imageId) => {
     this.setState({
       tooltipDynamicStyle: {
         opacity: 1,
         left: pos.x,
         top: pos.y + 7,
       },
-      tooltipText: text 
+      tooltipText: text,
+      tooltipImg: null,
     })
+    if (imageId) {
+      facetree.get_image(imageId).then(imageData => {
+        this.setState({tooltipImg: 'data:image/jpeg;base64,' + imageData})
+      })
+      .catch(error => {
+          console.log("Image download failed")
+          console.log(error)
+      });
+    }
   }
 
   render() {
     //const { treeRoot, links } = this.state
     const { data, mode } = this.props
-    const { tooltipDynamicStyle, tooltipText } = this.state
+    const { tooltipDynamicStyle, tooltipText, tooltipImg } = this.state
     const treeRoot = tree(data.root)
     const treeNodes = treeRoot ? treeRoot.descendants().reverse() : []
     const links = treeRoot ? treeRoot.links() : []
-    console.log(links, treeNodes)
     return (
       <div ref={this.chartRef}>
         <div id="tooltip" style={{
           ...styles.tooltip,
           ...tooltipDynamicStyle,
-        }}>{tooltipText}</div>
+        }}>
+          <p>{tooltipText}</p>
+          {tooltipImg && <img src={tooltipImg}/>}
+        </div>
         <svg
           style={styles.svg}
           pointerEvents="all"
@@ -337,7 +350,7 @@ export default class Chart extends Component {
               {links.map((link, i) => <Link key={i} mode={mode} data={link} />)}
             </g>
             <g ref={this.nodesRef}>
-              {treeNodes.map((node, i) => <Individual key={i} data={node} onHover={this.openTooltip} onLeave={this.closeTooltip} onClick={this.openModal} />)}
+              {treeNodes.map(node => <Individual data={node} onHover={this.openTooltip} onLeave={this.closeTooltip} onClick={this.openModal} />)}
             </g>
           </g>
         </svg>

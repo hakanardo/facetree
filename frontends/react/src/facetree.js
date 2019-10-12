@@ -85,6 +85,10 @@ class Facetree {
         setTimeout(this.database_download, 10);
     }
 
+    get_image = imgId => (
+        axios.get(this.facetree_backend + "/v1/images/" + imgId + "/thumb.jpg/base64", {"headers": this.auth_headers})
+        .then(response => response.data)
+    )
 }
 
 export default new Facetree()
